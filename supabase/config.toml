@@ -7,6 +7,3 @@ port = 54322
 [studio]
 enabled = true
 
-[functions]
-# Без JWT — вызовы идут с фронтенда
-verify_jwt = false
