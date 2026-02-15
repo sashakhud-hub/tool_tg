@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TelegramPreview from './TelegramPreview';
 import { Search, Send, Check, AlertCircle, Clock, Trash2, Settings, ChevronDown, RefreshCw, Zap } from 'lucide-react';
-import { API_BASE } from '../config';
+import { apiUrl } from '../config';
 
 const AISearch = () => {
     const [channels, setChannels] = useState([]);
@@ -38,7 +38,7 @@ const AISearch = () => {
     const [sendResult, setSendResult] = useState(null);
 
     useEffect(() => {
-        fetch(`${API_BASE}/api/channels`)
+        fetch(apiUrl('/channels'))
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -67,7 +67,7 @@ const AISearch = () => {
 
     useEffect(() => {
         if (!selectedChannel) return;
-        fetch(`${API_BASE}/api/channel-posts/${selectedChannel}`)
+        fetch(apiUrl(`/channel-posts/${selectedChannel}`))
             .then(r => r.json())
             .then(data => setPostsJson(JSON.stringify(data, null, 0)))
             .catch(() => setPostsJson(''));
@@ -77,7 +77,7 @@ const AISearch = () => {
         if (!resultMarkdown) { setResultHtml(''); return; }
         const timer = setTimeout(async () => {
             try {
-                const resp = await fetch(`${API_BASE}/api/format`, {
+                const resp = await fetch(apiUrl('/format'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: resultMarkdown }),
@@ -101,7 +101,7 @@ const AISearch = () => {
         setResultMarkdown('');
 
         try {
-            const resp = await fetch(`${API_BASE}/api/ai-search`, {
+            const resp = await fetch(apiUrl('/ai-search'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question, posts_json: postsJson, model: selectedModel }),
@@ -141,7 +141,7 @@ const AISearch = () => {
         setIsSending(true);
         setSendResult(null);
         try {
-            const resp = await fetch(`${API_BASE}/api/send-telegram`, {
+            const resp = await fetch(apiUrl('/send-telegram'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, html }),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TelegramPreview from './TelegramPreview';
 import { Send, Check, AlertCircle } from 'lucide-react';
-import { API_BASE } from '../config';
+import { apiUrl } from '../config';
 
 const MarkdownEditor = () => {
     const [markdown, setMarkdown] = useState('');
@@ -14,7 +14,7 @@ const MarkdownEditor = () => {
         if (!markdown) { setHtml(''); return; }
         const timer = setTimeout(async () => {
             try {
-                const r = await fetch('/api/format', {
+                const r = await fetch(apiUrl('/format'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: markdown }),
@@ -31,7 +31,7 @@ const MarkdownEditor = () => {
         setIsSending(true);
         setSendResult(null);
         try {
-            const r = await fetch(`${API_BASE}/api/send-telegram`, {
+            const r = await fetch(apiUrl('/send-telegram'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, html }),

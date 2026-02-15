@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, Download, AlertCircle, Database } from 'lucide-react';
-import { API_BASE } from '../config';
+import { apiUrl } from '../config';
 
 const FileUpload = () => {
     const [file, setFile] = useState(null);
@@ -14,7 +14,7 @@ const FileUpload = () => {
     const [channels, setChannels] = useState([]);
 
     useEffect(() => {
-        fetch(`${API_BASE}/api/channels`)
+        fetch(apiUrl('/channels'))
             .then(r => r.json())
             .then(data => setChannels(data.channels || []))
             .catch(() => {});
@@ -44,7 +44,7 @@ const FileUpload = () => {
         formData.append('file', file);
         formData.append('channel_link', channelLink);
         try {
-            const r = await fetch(`${API_BASE}/api/parse`, { method: 'POST', body: formData });
+            const r = await fetch(apiUrl('/parse'), { method: 'POST', body: formData });
             if (!r.ok) throw new Error('Ошибка парсинга');
             const data = await r.json();
             setParseResult(data);
@@ -56,7 +56,7 @@ const FileUpload = () => {
     const handleDownload = (ch) => {
         const name = ch || channelName;
         const q = name ? `?channel=${encodeURIComponent(name)}` : '';
-        window.location.href = `${API_BASE}/api/posts/download${q}`;
+        window.location.href = apiUrl('/posts/download', q);
     };
 
     return (

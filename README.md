@@ -117,22 +117,39 @@ docker compose up --build -d
 
 ---
 
-## Деплой на Vercel
+## Деплой на Vercel + Supabase
 
-### Важно
-TeleTools состоит из **фронтенда** (React) и **бэкенда** (FastAPI). Vercel умеет хостить только статику и serverless. Бэкенд нужно развернуть отдельно (Railway, Render, Fly.io и т.п.).
+### Архитектура
+- **Фронтенд** (Vercel): React-приложение
+- **Бэкенд** (Supabase Edge Functions): API вместо Railway
 
-### 1. Бэкенд (Railway / Render)
-Разверните API на Railway или Render:
-- Создайте сервис из репозитория
-- Укажите `TELEGRAM_BOT_TOKEN` и `GOOGLE_API_KEY` в переменных окружения
-- Запомните URL API (например `https://teletools-api.railway.app`)
+### 1. Supabase
+1. Создайте проект на [Supabase](https://supabase.com)
+2. Выполните миграции в SQL Editor:
+   - `supabase/migrations/001_create_tele_post.sql`
+   - `supabase/migrations/002_telegram_users.sql`
+3. Разверните Edge Functions:
+   ```bash
+   supabase functions deploy channels
+   supabase functions deploy posts
+   supabase functions deploy channel-posts
+   supabase functions deploy format
+   supabase functions deploy parse
+   supabase functions deploy send-telegram
+   supabase functions deploy telegram-webhook
+   supabase functions deploy gemini-models
+   supabase functions deploy ai-search
+   supabase functions deploy toolkit-generate
+   supabase functions deploy missed-search
+   supabase functions deploy posts-download
+   ```
+4. Добавьте секреты: `supabase secrets set TELEGRAM_BOT_TOKEN=xxx GOOGLE_API_KEY=xxx SUPABASE_SERVICE_ROLE_KEY=xxx`
+5. Настройте webhook бота: `https://api.telegram.org/botTOKEN/setWebhook?url=https://PROJECT.supabase.co/functions/v1/telegram-webhook`
 
-### 2. Фронтенд (Vercel)
+### 2. Vercel
 1. Импортируйте репозиторий в [Vercel](https://vercel.com)
-2. В **Environment Variables** добавьте:
-   - `VITE_API_URL` = URL вашего бэкенда (например `https://teletools-api.railway.app`)
-3. Деплой — Vercel автоматически соберёт фронтенд из `src/web`
+2. Environment Variables:
+   - `VITE_API_URL` = `https://YOUR_PROJECT.supabase.co/functions/v1`
 
 ---
 

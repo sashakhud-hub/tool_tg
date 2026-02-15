@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, PenTool, Check, AlertCircle, Sparkles, MessageSquare, Copy, Eye, ArrowUp, ArrowDown, Settings, RefreshCw, Send } from 'lucide-react';
 import TelegramPreview from './TelegramPreview';
-import { API_BASE } from '../config';
+import { apiUrl } from '../config';
 
 const AuthorToolkit = () => {
     const [channels, setChannels] = useState([]);
@@ -43,7 +43,7 @@ const AuthorToolkit = () => {
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        fetch('/api/channels')
+        fetch(apiUrl('/channels'))
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -62,7 +62,7 @@ const AuthorToolkit = () => {
         if (!generatedContent) { setResultHtml(''); return; }
         const timer = setTimeout(async () => {
             try {
-                const resp = await fetch(`${API_BASE}/api/format`, {
+                const resp = await fetch(apiUrl('/format'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: generatedContent }),
@@ -104,7 +104,7 @@ const AuthorToolkit = () => {
             });
             if (search) query.append('search', search);
 
-            const r = await fetch(`${API_BASE}/api/posts?${query.toString()}`);
+            const r = await fetch(apiUrl('/posts', `?${query.toString()}`));
             const data = await r.json();
             setPosts(data.posts || []);
             setTotal(data.total || 0);
@@ -156,7 +156,7 @@ const AuthorToolkit = () => {
         localStorage.setItem('gemini_model', selectedModel);
 
         try {
-            const resp = await fetch(`${API_BASE}/api/toolkit/generate`, {
+            const resp = await fetch(apiUrl('/toolkit/generate'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -185,7 +185,7 @@ const AuthorToolkit = () => {
         setIsSending(true);
         setSendStatus(null);
         try {
-            const resp = await fetch(`${API_BASE}/api/send-telegram`, {
+            const resp = await fetch(apiUrl('/send-telegram'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
