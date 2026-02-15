@@ -4,11 +4,10 @@ from typing import List, Optional
 import os
 import json
 import httpx
-from pathlib import Path
 from datetime import datetime, timedelta
+from src.db.posts_repo import get_all_posts, channel_exists
 
 router = APIRouter()
-DATA_DIR = Path("data")
 DEFAULT_MODEL = "gemini-2.0-flash"
 
 class MissedRequest(BaseModel):
@@ -41,21 +40,13 @@ async def missed_posts_search(request: MissedRequest):
     if not api_key:
         return MissedResponse(ok=False, error="GOOGLE_API_KEY not configured")
 
-    # Load posts
-    safe_name = "".join(c for c in request.channel_name if c.isalnum() or c in ("_", "-"))
-    file_path = DATA_DIR / f"posts_{safe_name}.json"
-    if not file_path.exists():
-        if request.channel_name in ["default", "posts"]:
-             file_path = DATA_DIR / "posts.json"
-    
-    if not file_path.exists():
+    # Load posts from Supabase or JSON
+    if not channel_exists(request.channel_name):
         return MissedResponse(ok=False, error=f"Channel {request.channel_name} not found")
-
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            all_posts = json.load(f)
+        all_posts = get_all_posts(request.channel_name)
     except Exception as e:
-         return MissedResponse(ok=False, error=str(e))
+        return MissedResponse(ok=False, error=str(e))
 
     # Filter by date
     # Determine the anchor date: use the latest post date in the dataset

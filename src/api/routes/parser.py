@@ -6,6 +6,7 @@ import shutil
 import json
 import re
 from src.etl.parser import TelegramExportParser
+from src.db.posts_repo import save_posts, is_supabase_configured
 from typing import List, Optional
 
 router = APIRouter()
@@ -44,9 +45,11 @@ async def parse_messages(
         parser = TelegramExportParser(messages_file, channel_link=channel_link)
         posts = parser.parse()
 
-        # Сохраняем посты в JSON
-        with open(posts_file, "w", encoding="utf-8") as f:
-            json.dump(posts, f, ensure_ascii=False, indent=2)
+        # Сохраняем в Supabase или JSON
+        save_posts(channel_name, posts)
+        if not is_supabase_configured():
+            with open(posts_file, "w", encoding="utf-8") as f:
+                json.dump(posts, f, ensure_ascii=False, indent=2)
 
         return {
             "message": "Successfully parsed messages",
@@ -61,17 +64,14 @@ async def parse_messages(
 @router.get("/posts/download")
 async def download_posts(channel: str = Query("unknown")):
     """Скачивание posts JSON по имени канала."""
-    # Очищаем от небезопасных символов
-    safe_name = re.sub(r"[^\w\-]", "_", channel)
-    posts_file = DATA_DIR / f"posts_{safe_name}.json"
-
-    if not posts_file.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"Posts file for channel '{channel}' not found.",
-        )
-    return FileResponse(
-        posts_file,
+    from src.db.posts_repo import get_all_posts, channel_exists
+    if not channel_exists(channel):
+        raise HTTPException(status_code=404, detail=f"Channel '{channel}' not found")
+    posts = get_all_posts(channel)
+    # Возвращаем как JSON через Response
+    from fastapi.responses import Response
+    return Response(
+        content=json.dumps(posts, ensure_ascii=False, indent=2),
         media_type="application/json",
-        filename=f"posts_{safe_name}.json",
+        headers={"Content-Disposition": f'attachment; filename="posts_{channel}.json"'},
     )

@@ -4,7 +4,6 @@ AI-поиск по постам канала через Gemini API.
 """
 import os
 import json
-from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import httpx
@@ -14,7 +13,7 @@ load_dotenv()
 
 router = APIRouter()
 
-DATA_DIR = Path("data")
+from src.db.posts_repo import list_channels, get_all_posts
 
 SYSTEM_PROMPT = """Ты — ассистент, который помогает находить релевантный контент из Telegram-канала.
 
@@ -101,31 +100,19 @@ async def list_gemini_models():
 
 
 @router.get("/channels", response_model=ChannelsResponse)
-async def list_channels():
-    """Список доступных распарсенных каналов."""
-    channels = []
-    if DATA_DIR.exists():
-        if (DATA_DIR / "posts.json").exists():
-            channels.append("default")
-        for f in sorted(DATA_DIR.glob("posts_*.json")):
-            # posts_NGI_ru.json → NGI_ru
-            name = f.stem.replace("posts_", "")
-            if name:
-                channels.append(name)
+async def list_channels_route():
+    """Список доступных распарсенных каналов (Supabase или JSON)."""
+    channels = list_channels()
     return ChannelsResponse(channels=channels)
 
 
 @router.get("/channel-posts/{channel_name}")
 async def get_channel_posts(channel_name: str):
-    """Возвращает содержимое posts.json для канала."""
-    # Очищаем от опасных символов
-    import re
-    safe = re.sub(r"[^\w\-]", "_", channel_name)
-    path = DATA_DIR / f"posts_{safe}.json"
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="Файл не найден")
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Возвращает посты канала (Supabase или JSON)."""
+    posts = get_all_posts(channel_name)
+    if not posts:
+        raise HTTPException(status_code=404, detail="Канал не найден")
+    return posts
 
 
 @router.post("/ai-search", response_model=SearchResponse)

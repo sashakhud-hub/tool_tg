@@ -71,6 +71,20 @@ GOOGLE_API_KEY=ваш_ключ_от_AI_Studio
 
 - **Bot token:** Напишите [@BotFather](https://t.me/BotFather) команду `/newbot`.
 - **Google API Key:** Получите ключ в [Google AI Studio](https://aistudio.google.com/apikey).
+- **Supabase** (опционально): URL и Service Role Key из [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API. Посты будут храниться в таблице `tele_post`. Без настроек — в JSON-файлах в `data/`.
+
+  Создайте таблицу в Supabase SQL Editor (см. `supabase/migrations/001_create_tele_post.sql`):
+  ```sql
+  CREATE TABLE IF NOT EXISTS tele_post (
+      id BIGINT NOT NULL,
+      channel_name TEXT NOT NULL,
+      url TEXT, text TEXT, date TEXT,
+      reactions INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (channel_name, id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_tele_post_channel ON tele_post(channel_name);
+  ```
 
 ### 3. Запуск
 
