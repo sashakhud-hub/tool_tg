@@ -8,3 +8,4 @@ node_modules
 qdrant_data
 data/
 .DS_Store
+supabase/.temp/
