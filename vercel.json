@@ -1,8 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "rootDirectory": "src/web",
+  "buildCommand": "cd src/web && npm install && npm run build",
+  "outputDirectory": "src/web/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
