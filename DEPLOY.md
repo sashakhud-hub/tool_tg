@@ -38,13 +38,14 @@ supabase functions deploy --project-ref bjyrsepsoysymdaspqdq --no-verify-jwt
 https://api.telegram.org/bot8224486265:AAEGXi7ApQPc7Db90a7uYAX7PppaJUq0Wqk/setWebhook?url=https://bjyrsepsoysymdaspqdq.supabase.co/functions/v1/telegram-webhook
 ```
 
-## 6. Vercel — переменная окружения
+## 6. Vercel — переменные окружения
 
 **Vercel** → Project → **Settings** → **Environment Variables**:
 
 | Name | Value |
 |------|-------|
 | VITE_API_URL | https://bjyrsepsoysymdaspqdq.supabase.co/functions/v1 |
+| VITE_SUPABASE_ANON_KEY | sb_publishable_HWhoUTq06YGTQjx0S_CjBw_ySMhv69p |
 
 Пересобери проект (Redeploy).
 

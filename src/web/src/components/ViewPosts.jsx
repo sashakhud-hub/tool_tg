@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowUp, ArrowDown, Eye, MessageCircle, Share2, Calendar } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl, apiHeaders } from '../config';
 
 const ViewPosts = () => {
     const [channels, setChannels] = useState([]);
@@ -16,7 +16,7 @@ const ViewPosts = () => {
     const [previewPost, setPreviewPost] = useState(null);
 
     useEffect(() => {
-        fetch(apiUrl('/channels'))
+        fetch(apiUrl('/channels'), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -43,7 +43,7 @@ const ViewPosts = () => {
             });
             if (search) query.append('search', search);
 
-            const r = await fetch(apiUrl('/posts', `?${query.toString()}`));
+            const r = await fetch(apiUrl('/posts', `?${query.toString()}`), { headers: apiHeaders() });
             const data = await r.json();
             setPosts(data.posts || []);
             setTotal(data.total || 0);

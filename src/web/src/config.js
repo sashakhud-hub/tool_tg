@@ -5,10 +5,19 @@
  * - Railway: https://xxx.railway.app
  */
 export const API_BASE = import.meta.env.VITE_API_URL || '';
+export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isSupabase = API_BASE.includes('supabase.co/functions');
 
-/** URL для endpoint (совместимость Supabase Edge Functions и FastAPI) */
+/** Заголовки для fetch к Supabase (избегаем 401) */
+export function apiHeaders(extra = {}) {
+  if (isSupabase && SUPABASE_ANON_KEY) {
+    return { Authorization: `Bearer ${SUPABASE_ANON_KEY}`, ...extra };
+  }
+  return extra;
+}
+
+/** URL для endpoint */
 export function apiUrl(path, params = '') {
   if (!API_BASE) return `/api${path}${params}`;
   if (isSupabase) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TelegramPreview from './TelegramPreview';
 import { Search, Send, Check, AlertCircle, Clock, Trash2, Settings, ChevronDown, RefreshCw, Zap } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl, apiHeaders } from '../config';
 
 const AISearch = () => {
     const [channels, setChannels] = useState([]);
@@ -38,7 +38,7 @@ const AISearch = () => {
     const [sendResult, setSendResult] = useState(null);
 
     useEffect(() => {
-        fetch(apiUrl('/channels'))
+        fetch(apiUrl('/channels'), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -67,7 +67,7 @@ const AISearch = () => {
 
     useEffect(() => {
         if (!selectedChannel) return;
-        fetch(apiUrl(`/channel-posts/${selectedChannel}`))
+        fetch(apiUrl(`/channel-posts/${selectedChannel}`), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => setPostsJson(JSON.stringify(data, null, 0)))
             .catch(() => setPostsJson(''));
@@ -79,7 +79,7 @@ const AISearch = () => {
             try {
                 const resp = await fetch(apiUrl('/format'), {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: apiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ text: resultMarkdown }),
                 });
                 const data = await resp.json();
@@ -103,7 +103,7 @@ const AISearch = () => {
         try {
             const resp = await fetch(apiUrl('/ai-search'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ question, posts_json: postsJson, model: selectedModel }),
             });
             const data = await resp.json();
@@ -143,7 +143,7 @@ const AISearch = () => {
         try {
             const resp = await fetch(apiUrl('/send-telegram'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ username, html }),
             });
             const data = await resp.json();

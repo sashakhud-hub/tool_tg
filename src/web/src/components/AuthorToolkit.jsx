@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, PenTool, Check, AlertCircle, Sparkles, MessageSquare, Copy, Eye, ArrowUp, ArrowDown, Settings, RefreshCw, Send } from 'lucide-react';
 import TelegramPreview from './TelegramPreview';
-import { apiUrl } from '../config';
+import { apiUrl, apiHeaders } from '../config';
 
 const AuthorToolkit = () => {
     const [channels, setChannels] = useState([]);
@@ -43,7 +43,7 @@ const AuthorToolkit = () => {
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        fetch(apiUrl('/channels'))
+        fetch(apiUrl('/channels'), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -64,7 +64,7 @@ const AuthorToolkit = () => {
             try {
                 const resp = await fetch(apiUrl('/format'), {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: apiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ text: generatedContent }),
                 });
                 const data = await resp.json();
@@ -104,7 +104,7 @@ const AuthorToolkit = () => {
             });
             if (search) query.append('search', search);
 
-            const r = await fetch(apiUrl('/posts', `?${query.toString()}`));
+            const r = await fetch(apiUrl('/posts', `?${query.toString()}`), { headers: apiHeaders() });
             const data = await r.json();
             setPosts(data.posts || []);
             setTotal(data.total || 0);
@@ -158,7 +158,7 @@ const AuthorToolkit = () => {
         try {
             const resp = await fetch(apiUrl('/toolkit/generate'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     channel_name: selectedChannel,
                     selected_post_ids: Array.from(selectedPosts),
@@ -187,7 +187,7 @@ const AuthorToolkit = () => {
         try {
             const resp = await fetch(apiUrl('/send-telegram'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     username: username.replace('@', ''),
                     html: resultHtml

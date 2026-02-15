@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, Calendar, AlertCircle, Zap, ArrowRight } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl, apiHeaders } from '../config';
 import MarkdownEditor from './MarkdownEditor';
 // Reusing MarkdownEditor for read-only display if valid component, 
 // or I can just use a simple div with markdown rendering. 
@@ -22,7 +22,7 @@ const MissedPosts = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch(apiUrl('/channels'))
+        fetch(apiUrl('/channels'), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => {
                 setChannels(data.channels || []);
@@ -38,7 +38,7 @@ const MissedPosts = () => {
             try {
                 const resp = await fetch(apiUrl('/format'), {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: apiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ text: resultMarkdown }),
                 });
                 const data = await resp.json();
@@ -63,7 +63,7 @@ const MissedPosts = () => {
         try {
             const resp = await fetch(apiUrl('/missed/search'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     channel_name: selectedChannel,
                     days_back: parseInt(daysBack),

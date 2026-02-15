@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, Download, AlertCircle, Database } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl, apiHeaders } from '../config';
 
 const FileUpload = () => {
     const [file, setFile] = useState(null);
@@ -14,7 +14,7 @@ const FileUpload = () => {
     const [channels, setChannels] = useState([]);
 
     useEffect(() => {
-        fetch(apiUrl('/channels'))
+        fetch(apiUrl('/channels'), { headers: apiHeaders() })
             .then(r => r.json())
             .then(data => setChannels(data.channels || []))
             .catch(() => {});
@@ -44,7 +44,7 @@ const FileUpload = () => {
         formData.append('file', file);
         formData.append('channel_link', channelLink);
         try {
-            const r = await fetch(apiUrl('/parse'), { method: 'POST', body: formData });
+            const r = await fetch(apiUrl('/parse'), { method: 'POST', body: formData, headers: apiHeaders() });
             if (!r.ok) throw new Error('Ошибка парсинга');
             const data = await r.json();
             setParseResult(data);
@@ -53,10 +53,21 @@ const FileUpload = () => {
         finally { setIsUploading(false); }
     };
 
-    const handleDownload = (ch) => {
+    const handleDownload = async (ch) => {
         const name = ch || channelName;
         const q = name ? `?channel=${encodeURIComponent(name)}` : '';
-        window.location.href = apiUrl('/posts/download', q);
+        const url = apiUrl('/posts/download', q);
+        if (url.startsWith('http')) {
+            const r = await fetch(url, { headers: apiHeaders() });
+            const blob = await r.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `posts_${name || 'export'}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } else {
+            window.location.href = url;
+        }
     };
 
     return (
