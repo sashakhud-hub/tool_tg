@@ -1,0 +1,7 @@
+{
+  "name": "teletools",
+  "private": true,
+  "scripts": {
+    "build": "cd src/web && npm install && npm run build"
+  }
+}
