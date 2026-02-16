@@ -1,4 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
+import { geminiGenerate } from "../_shared/gemini.ts";
+import { getSupabase } from "../_shared/supabase.ts";
 
 const SYS = `You are a helpful assistant filtering Telegram channel updates.
 The user wants to know what they missed relevant to their interest.
@@ -9,14 +11,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response(null, { status: 405, headers: corsHeaders });
   try {
-    const { channel_name, days_back = 30, user_interest, model = "gemini-2.0-flash" } = await req.json();
+    const { channel_name, days_back = 30, user_interest, model } = await req.json();
     const key = Deno.env.get("GOOGLE_API_KEY");
     if (!key || !user_interest) {
       return new Response(JSON.stringify({ ok: false, error: "GOOGLE_API_KEY не настроен или интересы не указаны" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const sb = (await import("../_shared/supabase.ts")).getSupabase();
+    const sb = getSupabase();
     const safe = (channel_name ?? "").replace(/[^\w\-]/g, "_") || "unknown";
     const { data: allPosts } = await sb.from("tele_post").select("id,url,text,date,reactions").eq("channel_name", safe);
     const posts = (allPosts ?? []);
@@ -43,26 +45,19 @@ Deno.serve(async (req) => {
     filtered.sort((a, b) => (b.reactions ?? 0) - (a.reactions ?? 0));
     const top = filtered.slice(0, 50);
     const userMsg = `Посты:\n${JSON.stringify(top, null, 1)}\n\nИнтерес пользователя: ${user_interest}`;
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYS }] },
-          contents: [{ role: "user", parts: [{ text: userMsg }] }],
-          generationConfig: { temperature: 0.3 },
-        }),
-      }
-    );
-    const data = await r.json();
-    if (data.error) {
-      return new Response(JSON.stringify({ ok: false, error: data.error?.message ?? "Ошибка" }), {
+    const result = await geminiGenerate({
+      key,
+      model,
+      systemInstruction: SYS,
+      userContent: userMsg,
+      temperature: 0.3,
+    });
+    if (!result.ok) {
+      return new Response(JSON.stringify({ ok: false, error: result.error ?? "Ошибка AI" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const text = (data.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
-    return new Response(JSON.stringify({ ok: true, markdown: text }), {
+    return new Response(JSON.stringify({ ok: true, markdown: result.text ?? "" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

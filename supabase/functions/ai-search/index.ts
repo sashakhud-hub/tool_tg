@@ -1,4 +1,5 @@
 import { corsHeaders } from "../_shared/cors.ts";
+import { geminiGenerate } from "../_shared/gemini.ts";
 
 const PROMPT = `Ты — ассистент, который помогает находить релевантный контент из Telegram-канала.
 Тебе предоставлен JSON с постами канала. Каждый пост: {id, url, text, date}.
@@ -15,7 +16,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response(null, { status: 405, headers: corsHeaders });
   try {
-    const { question, posts_json, model = "gemini-2.0-flash" } = await req.json();
+    const { question, posts_json, model } = await req.json();
     const key = Deno.env.get("GOOGLE_API_KEY");
     if (!key || !question || !posts_json) {
       return new Response(
@@ -24,27 +25,19 @@ Deno.serve(async (req) => {
       );
     }
     const userMsg = `Вот данные постов канала:\n\n${posts_json}\n\nЗапрос пользователя: ${question}`;
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: PROMPT }] },
-          contents: [{ role: "user", parts: [{ text: userMsg }] }],
-          generationConfig: { temperature: 0 },
-        }),
-      }
-    );
-    const data = await r.json();
-    if (data.error) {
-      return new Response(JSON.stringify({ ok: false, error: data.error?.message ?? "Ошибка" }), {
+    const result = await geminiGenerate({
+      key,
+      model,
+      systemInstruction: PROMPT,
+      userContent: userMsg,
+      temperature: 0,
+    });
+    if (!result.ok) {
+      return new Response(JSON.stringify({ ok: false, error: result.error ?? "Ошибка AI" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-    const text = parts.map((p: { text?: string }) => p.text ?? "").join("");
-    return new Response(JSON.stringify({ ok: true, markdown: text }), {
+    return new Response(JSON.stringify({ ok: true, markdown: result.text ?? "" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -52,7 +52,7 @@ const AISearch = () => {
         setIsLoadingModels(true);
         setModelsError('');
         try {
-            const r = await fetch(`${API_BASE}/api/gemini-models`);
+            const r = await fetch(apiUrl('/gemini-models'), { headers: apiHeaders() });
             const data = await r.json();
             if (data.ok && data.models?.length) {
                 setModels(data.models);

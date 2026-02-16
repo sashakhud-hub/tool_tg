@@ -1,27 +1,52 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { getSupabase } from "../_shared/supabase.ts";
+import { parseHTML } from "https://esm.sh/linkedom@0.18.12";
 
 function parseHtml(html: string, channelLink: string): { id: number; url: string; text: string; date: string; reactions: number }[] {
   const link = channelLink.replace(/\/$/, "");
   const posts: { id: number; url: string; text: string; date: string; reactions: number }[] = [];
-  const msgRegex = /<div[^>]*class="[^"]*message[^"]*"[^>]*id="message(\d+)"[^>]*>([\s\S]*?)<\/div>\s*(?=<div|$)/gi;
-  let m;
-  while ((m = msgRegex.exec(html)) !== null) {
-    const id = parseInt(m[1], 10);
-    const block = m[2];
-    const textDiv = block.match(/<div[^>]*class="[^"]*text[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-    let text = textDiv ? textDiv[1].replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").trim() : "";
-    const hasMedia = /class="[^"]*media_(photo|video|voice|audio|file)/i.test(block);
+  let document: Document;
+  try {
+    const { document: doc } = parseHTML(html);
+    document = doc;
+  } catch {
+    return posts;
+  }
+  const root = document.querySelector(".history") ?? document.body ?? document;
+  const messages = root.querySelectorAll("div.message");
+  for (const msg of messages) {
+    const msgId = msg.getAttribute("id") ?? "";
+    if (!msgId.startsWith("message") || msgId.startsWith("message-")) continue;
+    const id = parseInt(msgId.replace(/^message/, ""), 10);
+    if (isNaN(id) || id < 1) continue;
+
+    const textEl = msg.querySelector("div.text");
+    let text = "";
+    if (textEl) {
+      textEl.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+      text = (textEl.textContent ?? "").trim();
+    }
+    const hasMedia =
+      msg.querySelector("div.media_photo") ||
+      msg.querySelector("div.media_video") ||
+      msg.querySelector("div.media_voice_message") ||
+      msg.querySelector("div.media_audio_file") ||
+      msg.querySelector("div.media_file");
     if (!text && !hasMedia) continue;
-    const dateDiv = block.match(/<div[^>]*class="[^"]*pull_right date details[^"]*"[^>]*title="([^"]*)"/i);
-    const date = dateDiv ? dateDiv[1] : "";
+
+    const dateEl =
+      msg.querySelector("div.pull_right.date.details") ||
+      msg.querySelector("div.pull_right.date") ||
+      msg.querySelector("div[class*='date'][title]");
+    const date = (dateEl?.getAttribute("title") ?? "").trim();
+
     const url = `${link}/${id}`;
     let reactions = 0;
-    const rxMatch = block.match(/<span[^>]*class="[^"]*reactions[^"]*"[^>]*>[\s\S]*?<span[^>]*class="[^"]*count[^"]*"[^>]*>(\d+)<\/span>/gi);
-    if (rxMatch) {
-      rxMatch.forEach((s) => {
-        const n = s.match(/<span[^>]*class="[^"]*count[^"]*"[^>]*>(\d+)<\/span>/i);
-        if (n) reactions += parseInt(n[1], 10);
+    const rxEl = msg.querySelector("span.reactions");
+    if (rxEl) {
+      rxEl.querySelectorAll("span.count").forEach((c) => {
+        const n = parseInt((c.textContent ?? "").trim(), 10);
+        if (!isNaN(n)) reactions += n;
       });
     }
     posts.push({ id, url, text, date, reactions });

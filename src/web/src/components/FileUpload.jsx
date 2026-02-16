@@ -112,12 +112,16 @@ const FileUpload = () => {
                 )}
 
                 {parseResult && (
-                    <div className="alert alert-success" style={{
+                    <div className={`alert ${parseResult.count > 0 ? 'alert-success' : 'alert-warning'}`} style={{
                         marginTop: '1.25rem', flexDirection: 'column', gap: '0.75rem', padding: '1rem',
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <CheckCircle size={18} />
-                            <span>Распознано <b>{parseResult.count}</b> постов</span>
+                            <span>
+                                {parseResult.count > 0
+                                    ? <>Распознано <b>{parseResult.count}</b> постов</>
+                                    : <>Распознано <b>0</b> постов. Убедитесь, что файл — экспорт из Telegram Desktop (messages.html)</>}
+                            </span>
                         </div>
                         <button className="btn btn-success" onClick={() => handleDownload()}
                             style={{ width: 'auto', padding: '0.5rem 1.2rem', fontSize: '0.83rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
