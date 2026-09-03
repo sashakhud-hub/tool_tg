@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Прототипы первого опыта</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Onest:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --ground: #080c11;
+        --panel: #0e141c;
+        --card: #151d27;
+        --line: #26333f;
+        --ink: #e9f1f8;
+        --dim: #8da1b6;
+        --dim-2: #647587;
+        --mint: #67e0ae;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 72px 22px;
+        background:
+          radial-gradient(1100px 620px at 12% -12%, rgba(103, 224, 174, 0.1), transparent 62%),
+          radial-gradient(900px 520px at 92% 6%, rgba(134, 182, 255, 0.09), transparent 60%),
+          var(--ground);
+        color: var(--ink);
+        font-family: "Golos Text", system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim-2);
+      }
+      h1 {
+        margin: 10px 0 0;
+        font-family: "Onest", "Golos Text", sans-serif;
+        font-size: 38px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        text-wrap: balance;
+      }
+      .lede {
+        margin: 14px 0 0;
+        max-width: 56ch;
+        color: var(--dim);
+      }
+      .cards {
+        display: grid;
+        gap: 14px;
+        margin-top: 38px;
+      }
+      a.card {
+        display: block;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+      }
+      a.card:hover {
+        border-color: rgba(103, 224, 174, 0.4);
+        background: var(--card);
+      }
+      a.card h2 {
+        margin: 0;
+        font-family: "Onest", "Golos Text", sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      a.card p {
+        margin: 6px 0 0;
+        color: var(--dim);
+        font-size: 14px;
+      }
+      a.card .go {
+        display: inline-flex;
+        gap: 8px;
+        margin-top: 14px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--mint);
+      }
+      footer {
+        margin-top: 44px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--dim-2);
+        font-size: 12.5px;
+      }
+      a.repo {
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="eyebrow">Прототипы · первый опыт</div>
+      <h1>Обновлённый первый опыт с приоритетными виджетами</h1>
+      <p class="lede">
+        Две сборки одного сценария: цель пользователя, выбор источников данных, заполнение по приоритету, инсайт после
+        каждого шага и виджет результатов в двух состояниях.
+      </p>
+
+      <div class="cards">
+        <a class="card" href="./chat/">
+          <h2>Тёмный чат</h2>
+          <p>
+            Кликабельный сценарий на ванильном HTML плюс разбор ТЗ: собранный флоу, таблица виджетов с состояниями и
+            вопросы к продакту.
+          </p>
+          <span class="go">Открыть прототип <span aria-hidden="true">→</span></span>
+        </a>
+
+        <a class="card" href="./app/">
+          <h2>Версия на компонентах</h2>
+          <p>
+            Тот же сценарий на React, Tailwind и Radix. Компоненты собраны по конвенциям shadcn, поэтому файл из реестра
+            подменяет наш одноимённый без правок в экранах.
+          </p>
+          <span class="go">Открыть прототип <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+
+      <footer>
+        Прототипы для обсуждения ТЗ, не продакшн-макеты · исходники в
+        <a class="repo" href="https://github.com/sashakhud-hub/tool_tg/tree/main/prototypes">prototypes</a>
+      </footer>
+    </div>
+  </body>
+</html>
