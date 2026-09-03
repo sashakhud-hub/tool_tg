@@ -9,3 +9,6 @@ qdrant_data
 data/
 .DS_Store
 supabase/.temp/
+
+# скиллы, установленные локально через npx skills
+.agents/

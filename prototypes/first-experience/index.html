@@ -1,0 +1,1003 @@
+<title>Первый опыт в тёмном чате</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Onest:wght@600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#080C11;
+    --panel:#0E141C;
+    --card:#151D27;
+    --card-2:#1C2734;
+    --card-3:#232F3E;
+    --line:#26333F;
+    --text:#E9F1F8;
+    --dim:#8DA1B6;
+    --dim-2:#647587;
+    --mint:#67E0AE;
+    --mint-ink:#08251A;
+    --blue:#86B6FF;
+    --amber:#F0C173;
+    --red:#F08A80;
+    --radius-card:22px;
+    --radius-tile:18px;
+    --shadow:0 18px 40px rgba(0,0,0,.45);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 620px at 12% -12%, rgba(103,224,174,.10), transparent 62%),
+      radial-gradient(900px 520px at 92% 6%, rgba(134,182,255,.09), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Golos Text","Golos Text Fallback",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:"Onest","Golos Text",system-ui,sans-serif;margin:0;text-wrap:balance;letter-spacing:-.02em}
+  p{margin:0}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  :focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:8px}
+
+  /* ---------- страница ---------- */
+  .page{max-width:1220px;margin:0 auto;padding:36px 22px 72px}
+  .masthead{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 28px;padding-bottom:26px;border-bottom:1px solid var(--line)}
+  .masthead h1{font-size:34px;font-weight:800;line-height:1.1}
+  .masthead .lede{color:var(--dim);max-width:52ch;font-size:15px}
+  .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim-2);font-weight:600}
+  .layout{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:44px;margin-top:34px;align-items:start}
+  @media (max-width:940px){.layout{grid-template-columns:minmax(0,1fr);gap:34px;justify-items:center}}
+
+  /* ---------- телефон ---------- */
+  .phone-col{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px;align-items:center}
+  @media (max-width:940px){.phone-col{position:static}}
+  .phone{
+    width:390px;height:844px;flex:none;position:relative;
+    border-radius:52px;padding:11px;
+    background:linear-gradient(160deg,#2b3644,#0d1219 46%,#242e3b);
+    box-shadow:var(--shadow), 0 0 0 1px rgba(255,255,255,.06) inset;
+  }
+  .screen{position:relative;height:100%;border-radius:42px;overflow:hidden;background:var(--panel);display:flex;flex-direction:column;box-shadow:inset 0 1px 1px rgba(255,255,255,.10), inset 0 0 0 1px rgba(255,255,255,.05)}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:112px;height:26px;border-radius:16px;background:#05080c;z-index:6}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 4px;font-size:13px;font-weight:600;color:var(--text);z-index:5}
+  .statusbar .icons{display:flex;gap:5px;align-items:center;color:var(--dim)}
+  .appbar{display:flex;align-items:center;gap:12px;padding:8px 18px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(150deg,var(--mint),#2f9e77);display:grid;place-items:center;color:var(--mint-ink);font-weight:800;font-size:14px;font-family:"Onest",sans-serif}
+  .appbar .who{display:flex;flex-direction:column;line-height:1.25}
+  .appbar .who b{font-size:15px;font-weight:600}
+  .appbar .who span{font-size:12px;color:var(--mint)}
+  .appbar .tabs{margin-left:auto;display:flex;gap:2px;background:var(--card);padding:3px;border-radius:100px}
+  .appbar .tabs button{font-size:12px;font-weight:600;color:var(--dim);padding:6px 12px;border-radius:100px;transition:.32s cubic-bezier(.32,.72,0,1)}
+  .appbar .tabs button[aria-selected="true"]{background:var(--card-3);color:var(--text)}
+
+  .chat{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--card-3) transparent}
+  .chat::-webkit-scrollbar{width:5px}
+  .chat::-webkit-scrollbar-thumb{background:var(--card-3);border-radius:8px}
+
+  .composer{display:flex;align-items:center;gap:10px;padding:10px 14px 20px;border-top:1px solid rgba(255,255,255,.05);background:var(--panel)}
+  .composer .plus{width:38px;height:38px;flex:none;border-radius:50%;background:var(--card-2);display:grid;place-items:center;font-size:20px;color:var(--text)}
+  .composer .field{flex:1;height:38px;border-radius:100px;background:var(--card);display:flex;align-items:center;padding:0 16px;color:var(--dim-2);font-size:14px}
+  .composer .mic{color:var(--dim);font-size:18px}
+
+  /* ---------- сообщения ---------- */
+  .msg{max-width:86%;animation:rise .32s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.msg{animation:none}}
+  .bot{align-self:flex-start;background:var(--card);border:1px solid rgba(255,255,255,.045);border-radius:20px 20px 20px 6px;padding:13px 15px;font-size:14.5px}
+  .bot .lead{font-family:"Onest",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin-bottom:6px;display:block}
+  .bot .sub{color:var(--dim);font-size:13.5px;margin-top:8px;display:block}
+  .user{align-self:flex-end;background:var(--mint);color:var(--mint-ink);border-radius:20px 20px 6px 20px;padding:11px 15px;font-size:14.5px;font-weight:600}
+  .widget{align-self:stretch;max-width:100%;background:var(--card);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius-card);padding:16px;animation:rise .34s cubic-bezier(.2,.7,.3,1) both}
+  .w-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+  .w-head h4{font-size:16px;font-weight:700}
+  .w-head p{color:var(--dim);font-size:13px;margin-top:3px}
+  .w-head .badge{margin-left:auto;flex:none}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:100px;background:var(--card-3);color:var(--dim);white-space:nowrap}
+  .badge.ok{background:rgba(103,224,174,.14);color:var(--mint)}
+  .badge.warn{background:rgba(240,193,115,.14);color:var(--amber)}
+  .badge.bad{background:rgba(240,138,128,.15);color:var(--red)}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+
+  /* чипсы выбора цели */
+  .chips{display:flex;flex-direction:column;gap:8px}
+  .chip{display:flex;align-items:center;gap:10px;text-align:left;padding:12px 14px;border-radius:14px;background:var(--card-2);border:1px solid transparent;transition:.32s cubic-bezier(.32,.72,0,1);font-size:14px;font-weight:500}
+  .chip:hover{background:var(--card-3)}
+  .chip[aria-pressed="true"]{border-color:var(--mint);background:rgba(103,224,174,.10)}
+  .chip .ico{font-size:16px;flex:none;width:22px;text-align:center}
+  .own-input{display:flex;gap:8px;margin-top:10px}
+  .own-input input{flex:1;background:var(--card-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--text);font:inherit;font-size:14px}
+  .own-input input::placeholder{color:var(--dim-2)}
+  .own-input button{background:var(--card-3);border-radius:14px;padding:0 16px;font-weight:600;font-size:14px}
+
+  /* плитки источников */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .tile{position:relative;text-align:left;padding:13px 12px;border-radius:var(--radius-tile);background:var(--card-2);border:1.5px solid transparent;transition:.32s cubic-bezier(.32,.72,0,1);min-height:104px;display:flex;flex-direction:column;gap:5px}
+  .tile:hover{background:var(--card-3)}
+  .tile[aria-pressed="true"]{border-color:var(--mint);background:rgba(103,224,174,.10)}
+  .tile .ico{font-size:19px}
+  .tile b{font-size:13.5px;font-weight:600;line-height:1.25}
+  .tile span{font-size:11.5px;color:var(--dim);line-height:1.3;margin-top:auto}
+  .tile .check{position:absolute;top:11px;right:11px;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:10px;color:transparent}
+  .tile[aria-pressed="true"] .check{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+  .tile.locked{opacity:.62;cursor:not-allowed}
+  .tile.locked:hover{background:var(--card-2)}
+  .tile.wide{grid-column:1 / -1;min-height:0;flex-direction:row;align-items:center;gap:10px}
+  .tile.wide span{margin:0}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:100px;background:var(--mint);color:var(--mint-ink);font-weight:700;font-size:14.5px;margin-top:14px;transition:.32s cubic-bezier(.32,.72,0,1)}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:scale(.985)}
+  .btn .knob{width:26px;height:26px;border-radius:50%;background:rgba(8,37,26,.14);display:grid;place-items:center;font-size:13px;margin-left:2px;transition:.32s cubic-bezier(.32,.72,0,1)}
+  .btn.ghost .knob{background:rgba(255,255,255,.08)}
+  .btn:hover .knob{transform:translateX(2px)}
+  .btn[disabled]{background:var(--card-3);color:var(--dim-2);cursor:not-allowed}
+  .btn.ghost{background:var(--card-2);color:var(--text)}
+  .btn .count{font-weight:600;opacity:.7}
+  .btn-row{display:flex;flex-direction:column;gap:8px;align-self:flex-start;max-width:88%;width:100%}
+  .bubble-action{display:flex;align-items:center;gap:9px;padding:12px 16px;border-radius:100px;border:1px solid var(--line);background:var(--card);font-size:14px;font-weight:600;transition:.32s cubic-bezier(.32,.72,0,1);text-align:left}
+  .bubble-action:hover{background:var(--card-2);border-color:var(--card-3)}
+  .bubble-action:active{transform:scale(.99)}
+  .bubble-action.primary{background:var(--mint);color:var(--mint-ink);border-color:transparent}
+
+  /* прогресс */
+  .progress{height:6px;border-radius:100px;background:var(--card-3);overflow:hidden}
+  .progress i{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,var(--mint),#8ff0c8);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+  .progress-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .progress-row b{font-size:13px;color:var(--text);font-weight:600}
+
+  /* списки строк */
+  .rows{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .row{display:flex;align-items:center;gap:11px;padding:12px;border-radius:14px;background:var(--card-2);text-align:left;width:100%;transition:.32s cubic-bezier(.32,.72,0,1)}
+  button.row:hover{background:var(--card-3)}
+  .row .ico{width:30px;height:30px;flex:none;border-radius:10px;background:var(--card-3);display:grid;place-items:center;font-size:14px}
+  .row .txt{min-width:0;flex:1}
+  .row .txt b{display:block;font-size:13.5px;font-weight:600;line-height:1.3}
+  .row .txt span{display:block;font-size:11.5px;color:var(--dim);margin-top:2px}
+  .row .tail{margin-left:auto;flex:none;color:var(--dim-2);font-size:12px}
+  .row.done .txt b{color:var(--dim)}
+  .row.prio{background:linear-gradient(180deg,rgba(103,224,174,.10),rgba(103,224,174,.04));border:1px solid rgba(103,224,174,.18)}
+  .collapse{width:100%;margin-top:9px;padding:11px;border-radius:14px;background:transparent;border:1px dashed var(--line);color:var(--dim);font-size:13px;font-weight:600}
+  .collapse:hover{background:var(--card-2)}
+  .why{display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding:11px 12px;border-radius:14px;background:rgba(134,182,255,.08);color:var(--blue);font-size:12.5px;line-height:1.4}
+
+  /* инсайт */
+  .insight{border-left:2px solid var(--mint);padding-left:12px;margin-top:10px;display:flex;flex-direction:column;gap:3px}
+  .insight b{font-size:14px;font-weight:600}
+  .insight span{font-size:13px;color:var(--dim)}
+
+  /* критичные данные */
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .field{padding:11px 13px;border-radius:14px;background:var(--card-2);display:flex;flex-direction:column;gap:3px}
+  .field label{font-size:11px;color:var(--dim-2);font-weight:600}
+  .field .val{font-size:16px;font-weight:600;font-family:"Onest",sans-serif}
+  .field .val.empty{color:var(--dim-2)}
+  .seg{display:flex;gap:4px;background:var(--card-3);padding:3px;border-radius:100px}
+  .seg button{flex:1;font-size:12px;font-weight:600;padding:6px;border-radius:100px;color:var(--dim)}
+  .seg button[aria-pressed="true"]{background:var(--card);color:var(--text)}
+
+  /* результаты */
+  .result-shell{padding:5px;border-radius:calc(var(--radius-card) + 6px);background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .result-card{border-radius:var(--radius-card);padding:16px;background:linear-gradient(165deg,rgba(103,224,174,.16),rgba(134,182,255,.08) 58%,transparent),var(--card-2);border:1px solid rgba(103,224,174,.20);text-align:left;width:100%;display:block}
+  .result-card:hover{border-color:rgba(103,224,174,.42)}
+  .result-hero{display:flex;align-items:baseline;gap:9px}
+  .result-hero .num{font-family:"Onest",sans-serif;font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+  .result-hero .of{color:var(--dim);font-size:14px}
+  .reco{display:flex;gap:10px;padding:11px 0;border-top:1px solid rgba(255,255,255,.07)}
+  .reco:first-of-type{border-top:none}
+  .reco .n{width:22px;height:22px;flex:none;border-radius:7px;background:var(--card-3);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--mint)}
+  .reco b{display:block;font-size:13.5px;font-weight:600}
+  .reco span{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+  .link-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:13.5px;font-weight:600;color:var(--mint)}
+
+  /* график */
+  .chart-wrap{margin-top:12px;background:var(--card-2);border-radius:16px;padding:12px 10px 8px}
+  .chart-hero{display:flex;align-items:baseline;gap:8px;padding:0 4px 8px}
+  .chart-hero .num{font-family:"Onest",sans-serif;font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .chart-hero .unit{color:var(--dim);font-size:13px}
+  .chart-hero .delta{margin-left:auto;font-size:12px;font-weight:600}
+  .chart-hero .delta.up{color:var(--mint)}
+  .chart-hero .delta.down{color:var(--amber)}
+  svg.chart{display:block;width:100%;height:auto}
+  .scale{display:flex;justify-content:space-between;padding:6px 4px 0;font-size:10.5px;color:var(--dim-2);font-variant-numeric:tabular-nums}
+
+  /* карточка показателя без динамики */
+  .marker{display:flex;flex-direction:column;gap:10px}
+  .marker .top{display:flex;align-items:baseline;gap:8px}
+  .marker .top .num{font-family:"Onest",sans-serif;font-size:32px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .marker .top .unit{color:var(--dim);font-size:13px}
+  .norm{position:relative;height:8px;border-radius:100px;background:linear-gradient(90deg,var(--blue) 0%,var(--mint) 26%,var(--mint) 62%,var(--amber) 82%,var(--red) 100%);opacity:.85}
+  .norm i{position:absolute;top:-4px;width:4px;height:16px;border-radius:100px;background:var(--text);box-shadow:0 0 0 3px var(--card)}
+  .norm-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim-2)}
+  .explain{font-size:13px;color:var(--dim);line-height:1.45}
+  .explain b{color:var(--text);font-weight:600}
+
+  /* оверлей подключения устройства */
+  .overlay{position:absolute;inset:0;z-index:20;background:var(--panel);display:flex;flex-direction:column;padding:26px 20px 24px;transform:translateY(100%);transition:transform .34s cubic-bezier(.2,.7,.3,1)}
+  .overlay.open{transform:none}
+  .overlay .close{align-self:flex-start;width:36px;height:36px;border-radius:50%;background:var(--card-2);display:grid;place-items:center;font-size:16px}
+  .overlay .art{margin:22px auto 0;width:132px;height:132px;border-radius:50%;background:radial-gradient(circle at 34% 28%, rgba(103,224,174,.42), rgba(103,224,174,.05) 62%);display:grid;place-items:center;font-size:54px}
+  .overlay h3{font-size:24px;font-weight:800;margin-top:24px;text-align:center}
+  .overlay p{color:var(--dim);text-align:center;margin-top:8px;font-size:14px}
+  .overlay .list{margin-top:20px;display:flex;flex-direction:column;gap:8px}
+  .overlay .spacer{flex:1}
+  .toast{position:absolute;left:14px;right:14px;bottom:88px;z-index:30;background:var(--card-3);border:1px solid var(--line);border-radius:16px;padding:13px 15px;font-size:13.5px;font-weight:600;display:flex;gap:9px;align-items:center;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:.34s cubic-bezier(.32,.72,0,1);pointer-events:none}
+  .toast.show{opacity:1;transform:none}
+
+  /* галерея виджетов */
+  .gallery{flex:1;overflow-y:auto;padding:16px 14px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--card-3) transparent}
+  .gallery::-webkit-scrollbar{width:5px}
+  .gallery::-webkit-scrollbar-thumb{background:var(--card-3);border-radius:8px}
+  .gallery-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim-2);font-weight:600;margin-top:4px}
+
+  .phone-hint{color:var(--dim-2);font-size:12.5px;text-align:center;max-width:340px}
+
+  /* ---------- правая колонка ---------- */
+  .spec{display:flex;flex-direction:column;gap:26px;max-width:640px}
+  .spec section{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 22px 24px}
+  .spec h2{font-size:20px;font-weight:700;margin-bottom:4px}
+  .spec h3{font-size:15px;font-weight:700;margin:18px 0 6px}
+  .spec .muted{color:var(--dim);font-size:14px}
+  .flow{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column}
+  .flow li{display:grid;grid-template-columns:26px 1fr;gap:12px;padding:0 0 16px;position:relative}
+  .flow li:before{content:"";position:absolute;left:12.5px;top:24px;bottom:0;width:1px;background:var(--line)}
+  .flow li:last-child{padding-bottom:0}
+  .flow li:last-child:before{display:none}
+  .flow .n{width:26px;height:26px;border-radius:9px;background:var(--card-2);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--mint);font-family:"Onest",sans-serif}
+  .flow b{display:block;font-size:14.5px;font-weight:600}
+  .flow span{display:block;color:var(--dim);font-size:13.5px;margin-top:3px}
+  .flow code{font-size:12px;background:var(--card-2);border-radius:6px;padding:1px 6px;color:var(--blue);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
+  .table-scroll{overflow-x:auto}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim-2);font-weight:600}
+  td b{font-weight:600}
+  td.dim{color:var(--dim)}
+  .qs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .qs li{padding-left:16px;position:relative;font-size:14px}
+  .qs li:before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:2px;background:var(--amber)}
+  .qs b{display:block;font-weight:600;margin-bottom:2px}
+  .qs span{color:var(--dim);font-size:13.5px}
+  .risk{border-left:2px solid var(--amber);padding-left:14px;color:var(--dim);font-size:13.5px}
+  footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim-2);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px 20px}
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div style="flex:1 1 380px">
+      <div class="eyebrow">Прототип · первый опыт</div>
+      <h1 style="margin-top:8px">Первый опыт в&nbsp;тёмном чате</h1>
+    </div>
+    <p class="lede">Кликабельный прототип онбординга: цель&nbsp;→ источники данных&nbsp;→ заполнение&nbsp;→ инсайт&nbsp;→ результат. Справа — разбор ТЗ: что собрано, какие виджеты нужны и&nbsp;что решить до&nbsp;разработки.</p>
+  </header>
+
+  <div class="layout">
+    <!-- ============ ТЕЛЕФОН ============ -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="icons">▮▮▮ ⌁ ▰▰▰</span>
+          </div>
+          <div class="appbar">
+            <div class="avatar">Ф</div>
+            <div class="who">
+              <b>Ассистент здоровья</b>
+              <span id="status-line">на связи</span>
+            </div>
+            <div class="tabs" role="tablist">
+              <button role="tab" aria-selected="true" id="tab-chat">Чат</button>
+              <button role="tab" aria-selected="false" id="tab-gallery">Виджеты</button>
+            </div>
+          </div>
+
+          <div class="chat" id="chat" role="log" aria-live="polite"></div>
+          <div class="gallery" id="gallery" hidden></div>
+
+          <div class="composer" id="composer">
+            <button class="plus" id="plus-btn" aria-label="Добавить файл">+</button>
+            <div class="field">Сообщение</div>
+            <span class="mic">◍</span>
+          </div>
+
+          <div class="overlay" id="overlay" aria-hidden="true"></div>
+          <div class="toast" id="toast"></div>
+        </div>
+      </div>
+      <p class="phone-hint">Прототип работает: выберите цель, отметьте источники и&nbsp;пройдите шаги. Кнопка «Начать заново» — внизу чата.</p>
+    </div>
+
+    <!-- ============ РАЗБОР ТЗ ============ -->
+    <div class="spec">
+      <section>
+        <h2>Что мы собрали из&nbsp;ТЗ</h2>
+        <p class="muted">Онбординг перестаёт быть анкетой на&nbsp;30&nbsp;минут и&nbsp;становится сделкой: пользователь называет цель, отдаёт данные порциями и&nbsp;после каждой порции получает выгоду. Ключевая механика — интент, зафиксированный на&nbsp;первом шаге, управляет приоритетом анкет, инсайтами и&nbsp;рекомендациями.</p>
+        <ol class="flow">
+          <li><span class="n">1</span><div><b>Велком</b><span>Ценность одним экраном: что получит пользователь и&nbsp;как быстро. Без восклицаний и&nbsp;обещаний диагноза.</span></div></li>
+          <li><span class="n">2</span><div><b>Запрос и&nbsp;цель</b><span>5&nbsp;шаблонов + свободный ввод. Ответ сохраняется как <code>intent_id</code> и&nbsp;дальше подсвечивается в&nbsp;каждом шаге: «подбираю под вашу цель».</span></div></li>
+          <li><span class="n">3</span><div><b>Источники данных</b><span>Плитки с&nbsp;множественным выбором, счётчик прямо в&nbsp;кнопке. Агенты сбора из&nbsp;ЛК клиник — с&nbsp;замком и&nbsp;явной причиной, а&nbsp;не&nbsp;серой заглушкой.</span></div></li>
+          <li><span class="n">4</span><div><b>План и&nbsp;очередь</b><span>Выбранные источники превращаются в&nbsp;видимую очередь: пользователь понимает, сколько шагов осталось и&nbsp;может выйти на&nbsp;любом.</span></div></li>
+          <li><span class="n">5</span><div><b>Анкеты по&nbsp;приоритету</b><span>3&nbsp;приоритетные анкеты от&nbsp;ML открыты, остальные схлопнуты. Обязательна строка «почему эти» — иначе приоритет читается как случайный порядок.</span></div></li>
+          <li><span class="n">6</span><div><b>Загрузка файлов</b><span>Текущий сценарий с&nbsp;плюсиком + 4&nbsp;статуса валидации: принят, устарел, не&nbsp;распознан, обрабатывается.</span></div></li>
+          <li><span class="n">7</span><div><b>Устройства и&nbsp;ФПГ</b><span>Отдельный экран подключения и&nbsp;возврат в&nbsp;чат тостом, без статусного экрана-тупика.</span></div></li>
+          <li><span class="n">8</span><div><b>Похвала и&nbsp;инсайт</b><span>Две строки: что теперь известно и&nbsp;один вывод. Дальше ровно два бабла — результаты или продолжить.</span></div></li>
+          <li><span class="n">9</span><div><b>Виджет результатов</b><span>Кликабельный, два состояния: новичок (данных мало, показываем рост полноты) и&nbsp;действующий (изменения с&nbsp;прошлого раза).</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Виджеты и&nbsp;их&nbsp;состояния</h2>
+        <p class="muted">Всё собрано из&nbsp;одних компонентов: плитка, строка, прогресс, бейдж, бабл-действие. Разные жанры — одна грамматика.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Виджет</th><th>Роль</th><th>Состояния</th></tr></thead>
+            <tbody>
+              <tr><td><b>Цель</b></td><td class="dim">Фиксация интента</td><td class="dim">Выбор, свой ввод, зафиксировано, изменение</td></tr>
+              <tr><td><b>Источники</b></td><td class="dim">Выбор N&nbsp;из&nbsp;M</td><td class="dim">Пусто, выбрано, недоступно (замок), подключено</td></tr>
+              <tr><td><b>Анкеты</b></td><td class="dim">Очередь по&nbsp;приоритету</td><td class="dim">Приоритетные, схлопнутые, в&nbsp;процессе, готово</td></tr>
+              <tr><td><b>Файлы</b></td><td class="dim">Валидация загрузок</td><td class="dim">Принят, устарел, не&nbsp;распознан, обрабатывается</td></tr>
+              <tr><td><b>Устройства</b></td><td class="dim">Внешний экран</td><td class="dim">Не&nbsp;подключено, подключение, подключено, ошибка</td></tr>
+              <tr><td><b>Базовые данные</b></td><td class="dim">Пол, возраст, вес, рост</td><td class="dim">Показывается, только если базовая анкета пуста; часть полей приходит из&nbsp;Сбер&nbsp;ID</td></tr>
+              <tr><td><b>Полнота данных</b></td><td class="dim">Что добавить дальше</td><td class="dim">По разделам, с&nbsp;весом вклада в&nbsp;риск-профиль</td></tr>
+              <tr><td><b>Результаты</b></td><td class="dim">Итог сессии</td><td class="dim">Новичок и&nbsp;действующий пользователь</td></tr>
+              <tr><td><b>Динамика</b></td><td class="dim">График показателя</td><td class="dim">Шаги, сон, ресурс; нет данных — карточка без динамики</td></tr>
+              <tr><td><b>Показатель</b></td><td class="dim">Значение и&nbsp;расшифровка</td><td class="dim">В&nbsp;норме, пограничное, вне&nbsp;нормы, устарело</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Что решить до&nbsp;разработки</h2>
+        <p class="muted">Вопросы, где разные ответы дают разный продукт.</p>
+        <ul class="qs">
+          <li><b>Свободный ввод цели</b><span>Модель должна свести любую формулировку к&nbsp;известному интенту. Нужен фолбэк: если не&nbsp;распознали — уточняющий вопрос, а&nbsp;не&nbsp;молчаливый общий сценарий.</span></li>
+          <li><b>Инсайт после первого шага</b><span>После одной анкеты данных мало. Договориться, какой минимум делает инсайт корректным и&nbsp;что показывать, когда сказать нечего: честное «пока рано», а&nbsp;не&nbsp;выдуманный вывод.</span></li>
+          <li><b>Ответственность формулировок</b><span>Инсайты и&nbsp;рекомендации — не&nbsp;диагноз. Нужен согласованный словарь: «связано с», «повышает риск», «стоит обсудить с&nbsp;врачом». Проверка юристами и&nbsp;медконтролем.</span></li>
+          <li><b>Порядок при 5&nbsp;выбранных источниках</b><span>Что первое: быстрое (устройства, 30&nbsp;сек) или ценное (анкета, 6&nbsp;мин). Предлагаю первым короткий шаг — он даёт инсайт и&nbsp;удерживает, а&nbsp;длинную анкету ставить второй.</span></li>
+          <li><b>Замок на&nbsp;агентах</b><span>Что за&nbsp;ним: скоро, подписка или ручное подключение. Пока неизвестно — писать явную причину и&nbsp;срок, иначе замок читается как реклама.</span></li>
+          <li><b>Выход из&nbsp;флоу</b><span>Пользователь может уйти на&nbsp;любом шаге. Нужно состояние «вы остановились здесь» при возврате и&nbsp;правило, когда мы напомним.</span></li>
+        </ul>
+        <h3>Риск</h3>
+        <p class="risk">Главная угроза сценария — обещание в&nbsp;велкоме, которое не&nbsp;подтверждается первым инсайтом. Если после первой анкеты пользователь получает общую фразу, доверие к&nbsp;остальным шагам падает и&nbsp;он&nbsp;не&nbsp;дойдёт до&nbsp;устройств. Поэтому первый инсайт стоит собирать на&nbsp;самых предсказуемых данных: сон, шаги, вес и&nbsp;рост.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <span>Прототип для обсуждения ТЗ · не&nbsp;продакшн-макет</span>
+    <span>Текст по&nbsp;редполитике: «вы» со&nbsp;строчной, без восклицаний, точка не&nbsp;ставится в&nbsp;конце одиночного предложения</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var chat = document.getElementById('chat');
+  var gallery = document.getElementById('gallery');
+  var overlay = document.getElementById('overlay');
+  var toastEl = document.getElementById('toast');
+  var statusLine = document.getElementById('status-line');
+
+  var state = {
+    goal: null,
+    goalShort: null,
+    sources: [],
+    queue: [],
+    doneSteps: [],
+    filled: 0,
+    completeness: 12,
+    seenResults: false
+  };
+
+  var GOALS = [
+    {ico:'⚡', text:'Больше энергии, меньше усталости', short:'энергия', prio:['Сон и восстановление','Питание и дефициты','Стресс и настроение']},
+    {ico:'❤', text:'Снизить риск инфаркта и инсульта', short:'сердце и сосуды', prio:['Сердце и сосуды','Питание и дефициты','Наследственность']},
+    {ico:'⚖', text:'Разобраться с весом', short:'вес', prio:['Питание и дефициты','Обмен веществ','Активность']},
+    {ico:'☾', text:'Наладить сон', short:'сон', prio:['Сон и восстановление','Стресс и настроение','Активность']},
+    {ico:'✚', text:'Проверить, всё ли в порядке', short:'общий чек-ап', prio:['Базовый опросник','Сердце и сосуды','Наследственность']}
+  ];
+
+  var SOURCES = [
+    {id:'forms',   ico:'▤', title:'Анкеты',                 note:'9 анкет, от 2 мин каждая'},
+    {id:'files',   ico:'▣', title:'Анализы и заключения',   note:'PDF, фото, выписки'},
+    {id:'devices', ico:'◉', title:'Устройства',             note:'Кольцо Sber, Apple Health'},
+    {id:'mail',    ico:'✉', title:'Почта',                  note:'Письма из клиник и лабораторий'},
+    {id:'video',   ico:'▶', title:'Экспресс-диагностика',   note:'2 мин по видео, камера телефона'}
+  ];
+
+  var STEP_META = {
+    forms:   {title:'Анкеты',                 verb:'Заполнить анкеты'},
+    files:   {title:'Анализы и заключения',   verb:'Загрузить файлы'},
+    devices: {title:'Устройства',             verb:'Подключить устройства'},
+    mail:    {title:'Почта',                  verb:'Подключить почту'},
+    video:   {title:'Экспресс-диагностика',   verb:'Пройти диагностику'}
+  };
+
+  // ---------- утилиты ----------
+  function el(html){
+    var d = document.createElement('div');
+    d.innerHTML = html.trim();
+    return d.firstElementChild;
+  }
+  function add(node, delay){
+    if (delay) {
+      setTimeout(function(){ chat.appendChild(node); scroll(); }, delay);
+    } else {
+      chat.appendChild(node); scroll();
+    }
+    return node;
+  }
+  var pinnedTop = true;
+  function scroll(){
+    requestAnimationFrame(function(){
+      chat.scrollTop = pinnedTop ? 0 : chat.scrollHeight;
+    });
+  }
+  function bot(html, delay){ return add(el('<div class="msg bot">'+html+'</div>'), delay); }
+  function user(text){ return add(el('<div class="msg user">'+text+'</div>')); }
+  function widget(html, delay){ return add(el('<div class="msg widget">'+html+'</div>'), delay); }
+  function lock(node){ node.querySelectorAll('button, input').forEach(function(b){ b.disabled = true; }); node.style.opacity = '.55'; }
+  function toast(text){
+    toastEl.innerHTML = '<span style="color:var(--mint)">✓</span>' + text;
+    toastEl.classList.add('show');
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+  }
+
+  // ---------- шаг 1: велком ----------
+  function start(){
+    chat.innerHTML = '';
+    pinnedTop = true;
+    state = {goal:null, goalShort:null, sources:[], queue:[], doneSteps:[], filled:0, completeness:12, seenResults:false};
+    statusLine.textContent = 'на связи';
+
+    bot('<span class="lead">Здравствуйте, Илья</span>'+
+        'Я собираю ваш риск-профиль: свожу анкеты, анализы и&nbsp;данные устройств в&nbsp;одну картину и&nbsp;показываю, где риск растёт и&nbsp;что снизит его в&nbsp;первую очередь.'+
+        '<span class="sub">Первые выводы — через 3&nbsp;минуты, до&nbsp;того как вы заполните всё. Дальше картина уточняется с&nbsp;каждым новым источником</span>');
+
+    setTimeout(goalWidget, 420);
+  }
+
+  // ---------- шаг 2: цель ----------
+  function goalWidget(){
+    var chips = GOALS.map(function(g,i){
+      return '<button class="chip" data-i="'+i+'"><span class="ico">'+g.ico+'</span>'+g.text+'</button>';
+    }).join('');
+    var w = widget(
+      '<div class="w-head"><div><h4>С чем пришли?</h4><p>От ответа зависит, какие анкеты и&nbsp;показатели покажу первыми</p></div></div>'+
+      '<div class="chips">'+chips+'</div>'+
+      '<div class="own-input"><input type="text" placeholder="Свой запрос" aria-label="Свой запрос"><button type="button">Готово</button></div>'
+    );
+    w.querySelectorAll('.chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var g = GOALS[+btn.dataset.i];
+        pickGoal(g.text, g.short, g.prio, w);
+      });
+    });
+    var input = w.querySelector('input');
+    var ok = w.querySelector('.own-input button');
+    ok.addEventListener('click', function(){
+      var v = input.value.trim();
+      if (!v) { input.focus(); return; }
+      pickGoal(v, v.toLowerCase(), ['Базовый опросник','Сон и восстановление','Стресс и настроение'], w);
+    });
+    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') ok.click(); });
+  }
+
+  function pickGoal(text, short, prio, w){
+    pinnedTop = false;
+    lock(w);
+    state.goal = text; state.goalShort = short; state.prio = prio;
+    user(text);
+    bot('<span class="lead">Цель зафиксирована</span>'+
+        'Веду вас к&nbsp;ней: анкеты, показатели и&nbsp;рекомендации будут собираться под запрос «'+text.toLowerCase()+'».'+
+        '<span class="sub">Изменить цель можно в&nbsp;любой момент — картина пересоберётся</span>', 380);
+    setTimeout(sourcesWidget, 760);
+  }
+
+  // ---------- шаг 3: источники ----------
+  function sourcesWidget(){
+    var tiles = SOURCES.map(function(s){
+      return '<button class="tile" data-id="'+s.id+'" aria-pressed="false">'+
+        '<span class="check">✓</span><span class="ico">'+s.ico+'</span>'+
+        '<b>'+s.title+'</b><span>'+s.note+'</span></button>';
+    }).join('');
+    var w = widget(
+      '<div class="w-head"><div><h4>Чем готовы поделиться?</h4><p>Выберите всё, что подходит. Порядок соберу сам</p></div></div>'+
+      '<div class="tiles">'+tiles+
+        '<button class="tile wide locked" aria-pressed="false" disabled>'+
+          '<span class="ico">🔒</span><div><b>Агенты сбора данных</b><span>Заберут историю из&nbsp;ЛК клиник и&nbsp;лабораторий. Открываем в&nbsp;октябре</span></div>'+
+        '</button>'+
+      '</div>'+
+      '<button class="btn" disabled id="src-go">Выберите источники</button>'
+    );
+    var go = w.querySelector('#src-go');
+    w.querySelectorAll('.tile:not(.locked)').forEach(function(t){
+      t.addEventListener('click', function(){
+        var on = t.getAttribute('aria-pressed') === 'true';
+        t.setAttribute('aria-pressed', on ? 'false' : 'true');
+        var id = t.dataset.id;
+        if (on) { state.sources = state.sources.filter(function(x){ return x !== id; }); }
+        else { state.sources.push(id); }
+        var n = state.sources.length;
+        go.disabled = n === 0;
+        go.innerHTML = n === 0 ? 'Выберите источники'
+          : 'Продолжить <span class="count">выбрано '+n+' из 5</span><span class="knob">→</span>';
+      });
+    });
+    go.addEventListener('click', function(){
+      lock(w);
+      user(state.sources.map(function(id){ return STEP_META[id].title; }).join(', '));
+      planWidget();
+    });
+  }
+
+  // ---------- шаг 4: план ----------
+  function planWidget(){
+    var order = ['devices','video','mail','files','forms'];
+    state.queue = order.filter(function(id){ return state.sources.indexOf(id) >= 0; });
+
+    bot('<span class="lead">Собрал план</span>'+
+        'Начнём с&nbsp;быстрого — первые выводы появятся уже после первого шага. Выйти можно в&nbsp;любой момент, прогресс сохранится.', 200);
+
+    setTimeout(function(){
+      var rows = state.queue.map(function(id,i){
+        return '<div class="row"><span class="ico">'+(i+1)+'</span><div class="txt"><b>'+STEP_META[id].title+'</b>'+
+          '<span>'+ (id === 'forms' ? 'Приоритет анкет — под вашу цель' : 'Займёт меньше минуты') +'</span></div>'+
+          '<span class="tail">'+(i === 0 ? 'сейчас' : 'дальше')+'</span></div>';
+      }).join('');
+      var w = widget(
+        '<div class="w-head"><div><h4>План на&nbsp;сегодня</h4><p>'+state.queue.length+' шага до&nbsp;первого риск-профиля</p></div>'+
+        '<span class="badge ok"><span class="dot"></span>цель: '+state.goalShort+'</span></div>'+
+        '<div class="rows">'+rows+'</div>'+
+        '<button class="btn" id="plan-go">'+STEP_META[state.queue[0]].verb+'<span class="knob">→</span></button>'
+      );
+      w.querySelector('#plan-go').addEventListener('click', function(){
+        lock(w);
+        runStep(state.queue[0]);
+      });
+    }, 560);
+  }
+
+  // ---------- маршрутизация шагов ----------
+  function runStep(id){
+    if (id === 'forms') formsWidget();
+    else if (id === 'files') filesWidget();
+    else if (id === 'devices') devicesWidget();
+    else if (id === 'mail') mailWidget();
+    else if (id === 'video') videoWidget();
+  }
+
+  function nextStep(){
+    var rest = state.queue.filter(function(id){ return state.doneSteps.indexOf(id) < 0; });
+    if (rest.length) { runStep(rest[0]); return; }
+    if (state.completeness < 60) { criticalWidget(); return; }
+    resultsWidget(state.seenResults ? 'returning' : 'novice');
+  }
+
+  // ---------- анкеты ----------
+  function formsWidget(){
+    var prio = state.prio;
+    var rest = ['Наследственность','Вредные привычки','Активность','Женское или мужское здоровье','Лекарства и добавки','Хронические болезни'];
+    var w = widget(
+      '<div class="w-head"><div><h4>Анкеты</h4><p>Порядок собран под цель «'+state.goalShort+'»</p></div>'+
+      '<span class="badge">'+state.filled+' из 9</span></div>'+
+      '<div class="progress-row"><span>Заполнено</span><b id="q-num">'+state.filled+' из 9</b></div>'+
+      '<div class="progress"><i id="q-bar" style="width:'+(state.filled/9*100)+'%"></i></div>'+
+      '<div class="rows" id="q-rows">'+
+        prio.map(function(t,i){
+          return '<button class="row prio" data-t="'+t+'"><span class="ico">'+(i===0?'●':'○')+'</span>'+
+            '<div class="txt"><b>'+t+'</b><span>'+(i===0?'2 мин · 8 вопросов':'3 мин')+'</span></div>'+
+            '<span class="tail">→</span></button>';
+        }).join('')+
+      '</div>'+
+      '<button class="collapse" id="q-more">Ещё 6&nbsp;анкет · заполним позже</button>'+
+      '<div class="why"><span>◆</span><span>Эти три первыми, потому что сильнее всего влияют на&nbsp;вашу цель. Остальные уточнят картину и&nbsp;подождут</span></div>'
+    );
+    w.querySelector('#q-more').addEventListener('click', function(){
+      var box = w.querySelector('#q-rows');
+      box.insertAdjacentHTML('beforeend', rest.map(function(t){
+        return '<button class="row" data-t="'+t+'"><span class="ico">○</span><div class="txt"><b>'+t+'</b><span>2–4 мин</span></div><span class="tail">→</span></button>';
+      }).join(''));
+      this.remove();
+      bindRows();
+      scroll();
+    });
+    function bindRows(){
+      w.querySelectorAll('.row[data-t]').forEach(function(r){
+        if (r.dataset.bound) return;
+        r.dataset.bound = '1';
+        r.addEventListener('click', function(){
+          if (r.classList.contains('done')) return;
+          r.classList.add('done');
+          r.querySelector('.ico').textContent = '✓';
+          r.querySelector('.tail').textContent = 'готово';
+          state.filled++;
+          state.completeness = Math.min(96, state.completeness + 16);
+          w.querySelector('#q-bar').style.width = (state.filled/9*100)+'%';
+          w.querySelector('#q-num').textContent = state.filled + ' из 9';
+          w.querySelector('.badge').textContent = state.filled + ' из 9';
+          if (state.filled >= 2) {
+            lock(w);
+            finishStep('forms',
+              'Знаю ваш режим сна и&nbsp;уровень стресса',
+              'Вы спите 6&nbsp;ч&nbsp;10&nbsp;мин при норме 7–9. Это первое, что бьёт по&nbsp;энергии',
+              'Ночной сон короче нормы 5&nbsp;дней из&nbsp;7');
+          } else {
+            bot('Готово. Осталась ещё одна приоритетная анкета — после неё покажу первый вывод', 260);
+          }
+        });
+      });
+    }
+    bindRows();
+  }
+
+  // ---------- файлы ----------
+  function filesWidget(){
+    bot('Загрузите анализы и&nbsp;заключения через плюс внизу. Проверю каждый файл и&nbsp;скажу, что пригодилось', 160);
+    setTimeout(function(){
+      var w = widget(
+        '<div class="w-head"><div><h4>Загруженные файлы</h4><p>3 файла · проверил каждый</p></div></div>'+
+        '<div class="rows">'+
+          '<div class="row"><span class="ico">▣</span><div class="txt"><b>Биохимия крови</b><span>18 августа 2026 · 14 показателей</span></div><span class="badge ok"><span class="dot"></span>принят</span></div>'+
+          '<div class="row"><span class="ico">▣</span><div class="txt"><b>УЗИ щитовидной железы</b><span>3 марта 2019 · старше 3 лет</span></div><span class="badge warn">устарел</span></div>'+
+          '<div class="row"><span class="ico">▣</span><div class="txt"><b>IMG_4821.jpg</b><span>Текст не&nbsp;читается — снимите ближе и&nbsp;при свете</span></div><span class="badge bad">не&nbsp;распознан</span></div>'+
+        '</div>'+
+        '<button class="btn ghost" id="f-again">Загрузить снимок снова</button>'+
+        '<button class="btn" id="f-go">Продолжить<span class="knob">→</span></button>'
+      );
+      w.querySelector('#f-again').addEventListener('click', function(){
+        toast('Файл принят: гормоны щитовидной железы');
+      });
+      w.querySelector('#f-go').addEventListener('click', function(){
+        lock(w);
+        state.completeness = Math.min(96, state.completeness + 18);
+        finishStep('files',
+          'Вижу ваши анализы за&nbsp;август',
+          'Ферритин 24&nbsp;нг/мл — ниже нормы. Частая причина усталости при нормальном гемоглобине',
+          'Ферритин ниже нормы, гемоглобин в&nbsp;норме');
+      });
+    }, 520);
+  }
+
+  // ---------- устройства ----------
+  function devicesWidget(){
+    var w = widget(
+      '<div class="w-head"><div><h4>Устройства</h4><p>Подключение занимает 30&nbsp;секунд и&nbsp;дальше работает само</p></div></div>'+
+      '<div class="rows">'+
+        '<button class="row" data-d="ring"><span class="ico">◉</span><div class="txt"><b>Кольцо Sber</b><span>Сон, пульс, ресурс</span></div><span class="tail">подключить</span></button>'+
+        '<button class="row" data-d="health"><span class="ico">◍</span><div class="txt"><b>Apple Health</b><span>Шаги, активность, вес</span></div><span class="tail">подключить</span></button>'+
+      '</div>'+
+      '<button class="btn ghost" id="d-skip">Пропустить шаг</button>'
+    );
+    w.querySelectorAll('.row[data-d]').forEach(function(r){
+      r.addEventListener('click', function(){
+        openConnect(r.dataset.d, function(){
+          r.classList.add('done');
+          r.querySelector('.tail').innerHTML = '<span class="badge ok"><span class="dot"></span>подключено</span>';
+          toast(r.dataset.d === 'ring' ? 'Кольцо подключено' : 'Apple Health подключён');
+          setTimeout(function(){
+            lock(w);
+            state.completeness = Math.min(96, state.completeness + 20);
+            finishStep('devices',
+              'Вижу ваши сон и&nbsp;активность за&nbsp;30&nbsp;дней',
+              'Ресурс падает в&nbsp;дни, когда вы ложитесь позже 1:00. Разница — 22%',
+              'Поздний отбой снижает дневной ресурс на&nbsp;22%');
+          }, 900);
+        });
+      });
+    });
+    w.querySelector('#d-skip').addEventListener('click', function(){
+      lock(w);
+      state.doneSteps.push('devices');
+      bot('Хорошо, вернёмся к&nbsp;устройствам позже', 200);
+      setTimeout(nextStep, 620);
+    });
+  }
+
+  function openConnect(kind, done){
+    var isRing = kind === 'ring';
+    overlay.innerHTML =
+      '<button class="close" id="ov-close" aria-label="Закрыть">←</button>'+
+      '<div class="art">'+(isRing ? '◉' : '◍')+'</div>'+
+      '<h3>'+(isRing ? 'Кольцо Sber' : 'Apple Health')+'</h3>'+
+      '<p>'+(isRing ? 'Держите кольцо рядом с&nbsp;телефоном. Заберу сон, пульс и&nbsp;ресурс за&nbsp;последние 30&nbsp;дней' : 'Разрешите доступ к&nbsp;шагам, активности и&nbsp;весу. Данные останутся в&nbsp;вашем профиле')+'</p>'+
+      '<div class="list">'+
+        '<div class="row"><span class="ico">✓</span><div class="txt"><b>'+(isRing?'Сон и фазы':'Шаги и активность')+'</b><span>История за 30 дней</span></div></div>'+
+        '<div class="row"><span class="ico">✓</span><div class="txt"><b>'+(isRing?'Пульс и ресурс':'Вес и рост')+'</b><span>Обновляется автоматически</span></div></div>'+
+      '</div>'+
+      '<div class="spacer"></div>'+
+      '<button class="btn" id="ov-go">Подключить<span class="knob">→</span></button>'+
+      '<button class="btn ghost" id="ov-cancel" style="margin-top:8px">Не сейчас</button>';
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden','false');
+    function close(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); }
+    overlay.querySelector('#ov-close').addEventListener('click', close);
+    overlay.querySelector('#ov-cancel').addEventListener('click', close);
+    overlay.querySelector('#ov-go').addEventListener('click', function(){
+      var b = this;
+      b.textContent = 'Подключаю…';
+      setTimeout(function(){ close(); done(); }, 900);
+    });
+  }
+
+  // ---------- почта ----------
+  function mailWidget(){
+    var w = widget(
+      '<div class="w-head"><div><h4>Почта</h4><p>Найду письма из&nbsp;клиник и&nbsp;лабораторий, остальное не&nbsp;трогаю</p></div></div>'+
+      '<div class="rows">'+
+        '<button class="row" data-m="1"><span class="ico">✉</span><div class="txt"><b>Подключить почту</b><span>Только письма с&nbsp;результатами анализов</span></div><span class="tail">→</span></button>'+
+      '</div>'+
+      '<button class="btn ghost" id="m-skip">Пропустить шаг</button>'
+    );
+    w.querySelector('[data-m]').addEventListener('click', function(){
+      lock(w);
+      toast('Почта подключена: 4 письма с анализами');
+      state.completeness = Math.min(96, state.completeness + 12);
+      setTimeout(function(){
+        finishStep('mail',
+          'Нашёл 4&nbsp;письма с&nbsp;анализами за&nbsp;2&nbsp;года',
+          'Витамин D сдавали дважды: 18 и&nbsp;22&nbsp;нг/мл. Оба раза ниже нормы',
+          'Витамин D ниже нормы два замера подряд');
+      }, 900);
+    });
+    w.querySelector('#m-skip').addEventListener('click', function(){
+      lock(w); state.doneSteps.push('mail');
+      setTimeout(nextStep, 400);
+    });
+  }
+
+  // ---------- экспресс-диагностика ----------
+  function videoWidget(){
+    var w = widget(
+      '<div class="w-head"><div><h4>Экспресс-диагностика</h4><p>2 минуты, лицо в&nbsp;кадре, камера телефона</p></div></div>'+
+      '<div class="rows">'+
+        '<div class="row"><span class="ico">▶</span><div class="txt"><b>Что измерим</b><span>Пульс, вариабельность ритма, уровень стресса</span></div></div>'+
+      '</div>'+
+      '<button class="btn" id="v-go">Начать диагностику<span class="knob">→</span></button>'+
+      '<button class="btn ghost" id="v-skip">Пропустить шаг</button>'
+    );
+    w.querySelector('#v-go').addEventListener('click', function(){
+      lock(w);
+      this.textContent = 'Измеряю…';
+      setTimeout(function(){
+        state.completeness = Math.min(96, state.completeness + 14);
+        finishStep('video',
+          'Измерил пульс и&nbsp;вариабельность ритма',
+          'Вариабельность 38&nbsp;мс — низковата. Так выглядит хроническое недовосстановление',
+          'Низкая вариабельность ритма: 38 мс');
+      }, 1400);
+    });
+    w.querySelector('#v-skip').addEventListener('click', function(){
+      lock(w); state.doneSteps.push('video');
+      setTimeout(nextStep, 400);
+    });
+  }
+
+  // ---------- похвала + инсайт + 2 бабла ----------
+  function finishStep(id, known, insight, chipText){
+    if (state.doneSteps.indexOf(id) < 0) state.doneSteps.push(id);
+    bot('<span class="lead">Шаг закрыт</span>'+known+
+        '<div class="insight"><b>'+insight.split('.')[0]+'</b><span>'+insight.split('.').slice(1).join('.').trim()+'</span></div>', 320);
+
+    setTimeout(function(){
+      var left = state.queue.filter(function(x){ return state.doneSteps.indexOf(x) < 0; });
+      var row = add(el(
+        '<div class="msg btn-row">'+
+          '<button class="bubble-action primary" id="b-res">Посмотреть промежуточные результаты</button>'+
+          '<button class="bubble-action" id="b-next">'+(left.length ? 'Продолжить риск-профиль · осталось '+left.length : 'Дополнить риск-профиль')+'</button>'+
+        '</div>'
+      ));
+      row.querySelector('#b-res').addEventListener('click', function(){
+        lock(row);
+        user('Посмотреть результаты');
+        resultsWidget(state.seenResults ? 'returning' : 'novice');
+      });
+      row.querySelector('#b-next').addEventListener('click', function(){
+        lock(row);
+        user('Продолжить');
+        setTimeout(nextStep, 320);
+      });
+    }, 720);
+  }
+
+  // ---------- критичные данные ----------
+  function criticalWidget(){
+    bot('Для риск-профиля не&nbsp;хватает базового: пол, возраст, вес и&nbsp;рост. Возраст и&nbsp;пол взял из&nbsp;Сбер&nbsp;ID', 200);
+    setTimeout(function(){
+      var w = widget(
+        '<div class="w-head"><div><h4>Базовые данные</h4><p>Без них риск считается грубо</p></div>'+
+        '<span class="badge">30 секунд</span></div>'+
+        '<div class="fields">'+
+          '<div class="field"><label>Пол</label><div class="val">Мужской</div></div>'+
+          '<div class="field"><label>Возраст</label><div class="val">38 лет</div></div>'+
+          '<div class="field"><label>Вес</label><div class="val empty" id="f-w">— кг</div></div>'+
+          '<div class="field"><label>Рост</label><div class="val empty" id="f-h">— см</div></div>'+
+        '</div>'+
+        '<div class="own-input"><input id="c-w" type="text" inputmode="numeric" placeholder="Вес, кг" aria-label="Вес в килограммах">'+
+        '<input id="c-h" type="text" inputmode="numeric" placeholder="Рост, см" aria-label="Рост в сантиметрах"></div>'+
+        '<button class="btn" id="c-go">Сохранить<span class="knob">→</span></button>'
+      );
+      w.querySelector('#c-go').addEventListener('click', function(){
+        var wv = w.querySelector('#c-w').value.trim() || '84';
+        var hv = w.querySelector('#c-h').value.trim() || '181';
+        w.querySelector('#f-w').textContent = wv + ' кг';
+        w.querySelector('#f-w').classList.remove('empty');
+        w.querySelector('#f-h').textContent = hv + ' см';
+        w.querySelector('#f-h').classList.remove('empty');
+        lock(w);
+        state.completeness = Math.min(96, state.completeness + 14);
+        bot('Записал. ИМТ 25,6 — чуть выше нормы, это учту в&nbsp;рекомендациях', 300);
+        setTimeout(function(){ resultsWidget(state.seenResults ? 'returning' : 'novice'); }, 800);
+      });
+    }, 520);
+  }
+
+  // ---------- результаты ----------
+  function resultsWidget(mode){
+    state.seenResults = true;
+    var novice = mode === 'novice';
+    var w = widget(resultCardHTML(novice, state.completeness, state.goalShort || 'энергия'));
+    w.querySelector('#r-open').addEventListener('click', function(){
+      toast('Открываю риск-профиль');
+    });
+    var more = w.querySelector('#r-more');
+    if (more) more.addEventListener('click', function(){
+      lock(w);
+      user('Дополнить данные');
+      setTimeout(nextStep, 320);
+    });
+    setTimeout(function(){
+      add(el('<div class="msg btn-row"><button class="bubble-action" id="restart">Начать заново</button></div>'))
+        .querySelector('#restart').addEventListener('click', start);
+    }, 500);
+  }
+
+  function resultCardHTML(novice, pct, goal){
+    var recos = novice
+      ? [['Ложитесь до&nbsp;00:30 пять дней подряд','Самый быстрый способ поднять ресурс при вашей цели'],
+         ['Сдайте ферритин и&nbsp;витамин D','Оба показателя объясняют усталость чаще остального']]
+      : [['Держите отбой до&nbsp;00:30','Работает: ресурс вырос на&nbsp;9% за&nbsp;две недели'],
+         ['Пересдайте ферритин','Прошлый замер 24&nbsp;нг/мл, с&nbsp;тех пор 3&nbsp;месяца'],
+         ['Добавьте 2&nbsp;тыс шагов в&nbsp;день','До целевой активности не&nbsp;хватает немного']];
+    return '<div class="result-shell"><button class="result-card" id="r-open">'+
+      '<div class="eyebrow">'+(novice ? 'Первые выводы' : 'Изменения с&nbsp;прошлого раза')+'</div>'+
+      '<div class="result-hero" style="margin-top:8px"><span class="num">'+pct+'%</span><span class="of">данных собрано'+(novice ? '' : ' · +14% за неделю')+'</span></div>'+
+      '<div class="progress" style="margin-top:10px"><i style="width:'+pct+'%"></i></div>'+
+      '<p style="color:var(--dim);font-size:13px;margin-top:10px">'+
+        (novice
+          ? 'Этого хватает для первых рекомендаций по&nbsp;цели «'+goal+'». Точность вырастет, когда добавите анализы'
+          : 'Риск-профиль пересобран. По&nbsp;цели «'+goal+'» две метрики улучшились, одна требует внимания')+
+      '</p>'+
+      '<div style="margin-top:12px">'+
+        recos.map(function(r,i){
+          return '<div class="reco"><span class="n">'+(i+1)+'</span><div><b>'+r[0]+'</b><span>'+r[1]+'</span></div></div>';
+        }).join('')+
+      '</div>'+
+      '<div class="link-row"><span>Открыть риск-профиль</span><span>→</span></div>'+
+    '</button></div>'+
+    '<button class="btn ghost" id="r-more">Дополнить данные</button>';
+  }
+
+  // ---------- галерея критичных виджетов ----------
+  function buildGallery(){
+    gallery.innerHTML =
+      '<div class="gallery-label">Полнота данных</div>'+
+      '<div class="widget" style="animation:none">'+
+        '<div class="w-head"><div><h4>Полнота данных</h4><p>Чем полнее профиль, тем точнее риск</p></div><span class="badge warn">62%</span></div>'+
+        '<div class="progress"><i style="width:62%"></i></div>'+
+        '<div class="rows">'+
+          '<button class="row prio"><span class="ico">▣</span><div class="txt"><b>Анализы крови</b><span>Дадут +18% к&nbsp;точности — самый большой вклад</span></div><span class="tail">→</span></button>'+
+          '<button class="row"><span class="ico">▤</span><div class="txt"><b>Наследственность</b><span>+11%, 3&nbsp;минуты</span></div><span class="tail">→</span></button>'+
+          '<button class="row"><span class="ico">◉</span><div class="txt"><b>Давление</b><span>+9%, нужен тонометр или запись врача</span></div><span class="tail">→</span></button>'+
+        '</div>'+
+        '<div class="rows" style="margin-top:9px"><div class="row done"><span class="ico">✓</span><div class="txt"><b>Сон, активность, базовые данные</b><span>Собраны</span></div></div></div>'+
+      '</div>'+
+
+      '<div class="gallery-label">Рекомендации</div>'+
+      '<div class="widget" style="animation:none">'+
+        '<div class="w-head"><div><h4>Что делать сейчас</h4><p>Под цель «энергия», обновлено сегодня</p></div></div>'+
+        '<div class="reco"><span class="n">1</span><div><b>Отбой до&nbsp;00:30</b><span>5&nbsp;дней подряд · ресурс вырастет на&nbsp;15–20%</span></div></div>'+
+        '<div class="reco"><span class="n">2</span><div><b>Ферритин и&nbsp;витамин D</b><span>Сдать вместе, натощак · объясняют усталость чаще остального</span></div></div>'+
+        '<div class="reco"><span class="n">3</span><div><b>Обсудить с&nbsp;терапевтом</b><span>Низкая вариабельность ритма держится месяц</span></div></div>'+
+        '<button class="btn ghost" style="margin-top:14px">Все рекомендации · 7</button>'+
+      '</div>'+
+
+      '<div class="gallery-label">Динамика показателя</div>'+
+      '<div class="widget" style="animation:none">'+
+        '<div class="w-head"><div><h4>Активность</h4><p>14 дней</p></div></div>'+
+        '<div class="seg" id="seg">'+
+          '<button aria-pressed="true" data-k="steps">Шаги</button>'+
+          '<button aria-pressed="false" data-k="sleep">Сон</button>'+
+          '<button aria-pressed="false" data-k="energy">Ресурс</button>'+
+        '</div>'+
+        '<div class="chart-wrap" id="chart-wrap"></div>'+
+      '</div>'+
+
+      '<div class="gallery-label">Показатель без динамики</div>'+
+      '<div class="widget" style="animation:none">'+
+        '<div class="w-head"><div><h4>Ферритин</h4><p>Анализ от&nbsp;18&nbsp;августа 2026</p></div><span class="badge warn">ниже нормы</span></div>'+
+        '<div class="marker">'+
+          '<div class="top"><span class="num">24</span><span class="unit">нг/мл · норма 30–400</span></div>'+
+          '<div class="norm"><i style="left:6%"></i></div>'+
+          '<div class="norm-labels"><span>0</span><span>30</span><span>200</span><span>400</span></div>'+
+          '<p class="explain"><b>Что это.</b> Ферритин показывает запас железа. При низком запасе гемоглобин ещё держится в&nbsp;норме, а&nbsp;сил уже нет: типичны усталость к&nbsp;середине дня, зябкость, выпадение волос.</p>'+
+          '<p class="explain"><b>Что дальше.</b> Один замер — не&nbsp;диагноз. Покажите результат терапевту: он&nbsp;решит, нужны ли&nbsp;препараты железа и&nbsp;дополнительные анализы.</p>'+
+        '</div>'+
+        '<button class="btn ghost" style="margin-top:14px">Записаться к&nbsp;терапевту</button>'+
+      '</div>'+
+
+      '<div class="gallery-label">Результаты · новичок</div>'+
+      '<div class="widget" style="animation:none">'+ resultCardHTML(true, 38, 'энергия') +'</div>'+
+
+      '<div class="gallery-label">Результаты · действующий пользователь</div>'+
+      '<div class="widget" style="animation:none">'+ resultCardHTML(false, 74, 'энергия') +'</div>';
+
+    var SERIES = {
+      steps:  {vals:[6.2,7.4,5.1,8.9,9.6,4.2,3.8,7.1,8.4,9.9,10.6,6.4,8.8,11.2], unit:'тыс шагов в день', hero:'8,1', delta:'+12% к прошлой неделе', dir:'up', max:12, ticks:['0','6','12'], note:'Цель — 10 тыс'},
+      sleep:  {vals:[6.4,6.1,5.4,7.2,6.8,5.9,6.0,6.6,7.4,7.1,6.2,5.8,7.0,7.3], unit:'ч сна за ночь', hero:'6,5', delta:'−4% к прошлой неделе', dir:'down', max:9, ticks:['0','4,5','9'], note:'Норма — 7–9 ч'},
+      energy: {vals:[52,48,41,63,67,44,39,58,71,74,69,55,72,78], unit:'из 100 · дневной ресурс', hero:'59', delta:'+9% к прошлой неделе', dir:'up', max:100, ticks:['0','50','100'], note:'Считается по сну и пульсу'}
+    };
+    function drawChart(key){
+      var s = SERIES[key];
+      var W = 300, H = 108, pad = 6;
+      var n = s.vals.length;
+      var pts = s.vals.map(function(v,i){
+        var x = pad + i*(W-2*pad)/(n-1);
+        var y = H - pad - (v/s.max)*(H-2*pad);
+        return [x, y];
+      });
+      var line = pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
+      var area = line + ' L '+(W-pad)+' '+(H-pad)+' L '+pad+' '+(H-pad)+' Z';
+      var last = pts[n-1];
+      document.getElementById('chart-wrap').innerHTML =
+        '<div class="chart-hero"><span class="num">'+s.hero+'</span><span class="unit">'+s.unit+'</span>'+
+        '<span class="delta '+s.dir+'">'+s.delta+'</span></div>'+
+        '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="График за 14 дней">'+
+          '<defs><linearGradient id="g-'+key+'" x1="0" y1="0" x2="0" y2="1">'+
+            '<stop offset="0%" stop-color="#67E0AE" stop-opacity=".30"/>'+
+            '<stop offset="100%" stop-color="#67E0AE" stop-opacity="0"/></linearGradient></defs>'+
+          '<line x1="'+pad+'" y1="'+(H/2)+'" x2="'+(W-pad)+'" y2="'+(H/2)+'" stroke="#26333F" stroke-width="1" stroke-dasharray="3 4"/>'+
+          '<path d="'+area+'" fill="url(#g-'+key+')"/>'+
+          '<path d="'+line+'" fill="none" stroke="#67E0AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+          '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="4" fill="#67E0AE" stroke="#151D27" stroke-width="2"/>'+
+        '</svg>'+
+        '<div class="scale"><span>'+s.ticks[0]+'</span><span>'+s.note+'</span><span>'+s.ticks[2]+'</span></div>';
+    }
+    var seg = document.getElementById('seg');
+    seg.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-k]');
+      if (!b) return;
+      seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      drawChart(b.dataset.k);
+    });
+    drawChart('steps');
+  }
+
+  // ---------- табы ----------
+  var tabChat = document.getElementById('tab-chat');
+  var tabGal = document.getElementById('tab-gallery');
+  var composer = document.getElementById('composer');
+  tabChat.addEventListener('click', function(){
+    tabChat.setAttribute('aria-selected','true');
+    tabGal.setAttribute('aria-selected','false');
+    chat.hidden = false; gallery.hidden = true; composer.hidden = false;
+  });
+  tabGal.addEventListener('click', function(){
+    tabGal.setAttribute('aria-selected','true');
+    tabChat.setAttribute('aria-selected','false');
+    chat.hidden = true; gallery.hidden = false; composer.hidden = true;
+  });
+  document.getElementById('plus-btn').addEventListener('click', function(){
+    toast('Файл добавлен в очередь проверки');
+  });
+
+  buildGallery();
+  start();
+})();
+</script>
