@@ -19,3 +19,6 @@ supabase/.temp/
 # сборка прототипов
 prototypes/*/dist/
 prototypes/*/node_modules/
+
+# однофайловая сборка прототипа для просмотра
+prototypes/*/single-file.html
