@@ -48,11 +48,12 @@ jobs:
         with:
           path: site
 
-  # Деплой идёт с main или по кнопке: на ветке достаточно проверить сборку,
-  # красный шаг публикации не должен блокировать пул-реквест.
+  # Деплой идёт только с main: окружение github-pages не пускает публикацию
+  # с других веток, а её падение висело бы красным чеком на пул-реквесте.
+  # На ветке достаточно убедиться, что прототип собирается.
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
