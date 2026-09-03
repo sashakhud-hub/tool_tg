@@ -2,7 +2,7 @@
   "name": "teletools",
   "private": true,
   "scripts": {
-    "build": "cd src/web && npm install && npm run build",
+    "build": "cd src/web && npm install && npm run build && cd ../.. && node scripts/build-prototypes.mjs",
     "deploy:supabase": "supabase functions deploy --project-ref bjyrsepsoysymdaspqdq --no-verify-jwt"
   }
 }
