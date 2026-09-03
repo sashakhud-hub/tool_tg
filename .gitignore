@@ -9,3 +9,16 @@ qdrant_data
 data/
 .DS_Store
 supabase/.temp/
+
+# скиллы, установленные локально через npx skills
+# .agents — сами файлы, .claude/skills — симлинки на них
+# восстанавливаются из skills-lock.json: npx skills install
+.agents/
+.claude/skills/
+
+# сборка прототипов
+prototypes/*/dist/
+prototypes/*/node_modules/
+
+# однофайловая сборка прототипа для просмотра
+prototypes/*/single-file.html
