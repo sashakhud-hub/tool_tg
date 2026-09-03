@@ -7,8 +7,10 @@ import { ChoiceRow, ChoiceTile } from "@/components/ui/choice"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Toast } from "@/components/ui/toast"
-import { BotMessage, Insight, UserMessage, WhyNote } from "@/components/chat/primitives"
+import { BotMessage, UserMessage, WhyNote } from "@/components/chat/primitives"
 import { AppBar, Composer, ConnectSheet, PhoneFrame, StatusBar } from "@/components/chat/phone"
+import { InsightMessage, type Visual } from "@/components/chat/insight"
+import { CompletenessStrip } from "@/components/chat/visuals"
 import { DynamicsWidget, MarkerWidget, ResultWidget, Widget } from "@/components/chat/widgets"
 
 type SourceId = "forms" | "files" | "devices" | "mail" | "video"
@@ -61,6 +63,9 @@ export default function App() {
   const [blocks, setBlocks] = React.useState<Block[]>([])
   const [toast, setToast] = React.useState<{ text: string; open: boolean }>({ text: "", open: false })
   const [sheet, setSheet] = React.useState<{ kind: "ring" | "health"; open: boolean }>({ kind: "ring", open: false })
+  // полнота нужна и в разметке (полоса под шапкой), и в коллбэках виджетов
+  const [completeness, setCompleteness] = React.useState(12)
+  const [planned, setPlanned] = React.useState(false)
   const chatRef = React.useRef<HTMLDivElement>(null)
 
   // состояние сценария живёт в ref: коллбэки виджетов читают актуальные значения
@@ -85,6 +90,12 @@ export default function App() {
     else append()
   }, [])
 
+  /** Поднимает полноту профиля и держит ref и состояние в одном значении. */
+  const bump = React.useCallback((delta: number) => {
+    s.current.completeness = Math.min(96, s.current.completeness + delta)
+    setCompleteness(s.current.completeness)
+  }, [])
+
   const showToast = React.useCallback((text: string) => {
     setToast({ text, open: true })
     window.setTimeout(() => setToast((t) => ({ ...t, open: false })), 2600)
@@ -100,6 +111,8 @@ export default function App() {
   const start = React.useCallback(() => {
     s.current = { ...s.current, goal: "", goalShort: "", prio: [], sources: [], queue: [], done: [], filled: 0, completeness: 12, seenResults: false, pinnedTop: true }
     setBlocks([])
+    setCompleteness(12)
+    setPlanned(false)
     push(
       <BotMessage
         lead="Здравствуйте, Илья"
@@ -137,6 +150,7 @@ export default function App() {
   function pickSources(ids: SourceId[]) {
     s.current.sources = ids
     s.current.queue = STEP_ORDER.filter((id) => ids.includes(id))
+    setPlanned(true)
     push(<UserMessage>{ids.map((id) => STEP_TITLE[id]).join(", ")}</UserMessage>)
     push(
       <BotMessage lead="Собрал план">
@@ -208,69 +222,130 @@ export default function App() {
   // ---------- результаты шагов ----------
   function onFormsFilled() {
     s.current.filled += 2
-    s.current.completeness = Math.min(96, s.current.completeness + 32)
-    finishStep("forms", "Знаю ваш режим сна и уровень стресса", "Вы спите 6 ч 10 мин при норме 7–9", "Это первое, что бьёт по энергии")
+    bump(32)
+    finishStep("forms", {
+      eyebrow: "Первое, что видно по анкетам",
+      before: "Илья, вы спите",
+      value: "6 ч 10 мин",
+      after: "при норме 7–9",
+      visual: {
+        kind: "sparkline",
+        values: [6.4, 6.1, 5.4, 7.2, 6.8, 5.9, 6.0],
+        norm: [7, 9],
+        labels: ["7 дней назад", "сегодня"],
+      },
+      meaning: "Пять ночей из семи короче нормы. При вашей цели это первое, что бьёт по энергии — раньше анализов и добавок",
+    })
   }
+
   function onFilesDone() {
-    s.current.completeness = Math.min(96, s.current.completeness + 18)
-    finishStep("files", "Вижу ваши анализы за август", "Ферритин 24 нг/мл — ниже нормы", "Частая причина усталости при нормальном гемоглобине")
+    bump(18)
+    finishStep("files", {
+      eyebrow: "Из анализов за август",
+      before: "Ферритин",
+      value: "24 нг/мл",
+      after: "— ниже нормы",
+      visual: { kind: "marker", value: 24, min: 0, max: 200, normFrom: 30, unit: "нг/мл" },
+      meaning: "Запас железа низкий, а гемоглобин в норме — поэтому обычные анализы выглядят «хорошими», а сил нет. Частая причина усталости",
+    })
   }
+
   function onMailDone() {
-    s.current.completeness = Math.min(96, s.current.completeness + 12)
+    bump(12)
     showToast("Почта подключена: 4 письма с анализами")
     window.setTimeout(
-      () => finishStep("mail", "Нашёл 4 письма с анализами за 2 года", "Витамин D сдавали дважды: 18 и 22 нг/мл", "Оба раза ниже нормы"),
-      900
-    )
-  }
-  function onVideoDone() {
-    s.current.completeness = Math.min(96, s.current.completeness + 14)
-    finishStep("video", "Измерил пульс и вариабельность ритма", "Вариабельность 38 мс — низковата", "Так выглядит хроническое недовосстановление")
-  }
-  function onDeviceConnected() {
-    setSheet((v) => ({ ...v, open: false }))
-    showToast(sheet.kind === "ring" ? "Кольцо подключено" : "Apple Health подключён")
-    s.current.completeness = Math.min(96, s.current.completeness + 20)
-    window.setTimeout(
-      () => finishStep("devices", "Вижу ваши сон и активность за 30 дней", "Ресурс падает в дни, когда вы ложитесь позже 1:00", "Разница — 22%"),
+      () =>
+        finishStep("mail", {
+          eyebrow: "Нашёл в письмах за 2 года",
+          before: "Витамин D сдавали дважды:",
+          value: "18 и 22 нг/мл",
+          visual: { kind: "marker", value: 22, previous: 18, min: 0, max: 100, normFrom: 30, unit: "нг/мл" },
+          meaning: "Оба замера ниже нормы, между ними год. Значит, дефицит не разовый, а держится — это меняет рекомендации",
+        }),
       900
     )
   }
 
-  /** Похвала, инсайт и ровно два бабла после каждого шага. */
-  function finishStep(id: SourceId, known: string, headline: string, detail: string) {
-    if (!s.current.done.includes(id)) s.current.done.push(id)
-    push(
-      <BotMessage lead="Шаг закрыт">
-        {known}
-        <Insight headline={headline} detail={detail} />
-      </BotMessage>,
-      320
+  function onVideoDone() {
+    bump(14)
+    finishStep("video", {
+      eyebrow: "По видео за 2 минуты",
+      before: "Вариабельность ритма",
+      value: "38 мс",
+      after: "— низковата",
+      visual: { kind: "gauge", value: 38, max: 100, caption: "Норма для вашего возраста — от 50 мс", zone: "warn" },
+      meaning: "Так выглядит хроническое недовосстановление: организм не выходит из режима нагрузки даже в покое",
+    })
+  }
+
+  function onDeviceConnected() {
+    setSheet((v) => ({ ...v, open: false }))
+    showToast(sheet.kind === "ring" ? "Кольцо подключено" : "Apple Health подключён")
+    bump(20)
+    window.setTimeout(
+      () =>
+        finishStep("devices", {
+          eyebrow: "По данным за 30 дней",
+          before: "В дни позднего отбоя ресурс ниже на",
+          value: "22%",
+          visual: {
+            kind: "bars",
+            items: [
+              { label: "Отбой до 00:30", value: 71 },
+              { label: "Отбой после 01:00", value: 55 },
+            ],
+            unit: "балл",
+          },
+          meaning: "Разница устойчивая, а не случайная: она держится весь месяц. Это самый быстрый рычаг при вашей цели",
+        }),
+      900
     )
+  }
+
+  /**
+   * После шага: инсайт-герой, затем действия. В первый раз оба равнозначны,
+   * дальше основное — продолжить, а результаты уходят тихой строкой.
+   */
+  function finishStep(
+    id: SourceId,
+    insight: { eyebrow: string; before: string; value: string; after?: string; visual: Visual; meaning: string }
+  ) {
+    if (!s.current.done.includes(id)) s.current.done.push(id)
+    push(<InsightMessage {...insight} />, 320)
+
     const left = s.current.queue.filter((x) => !s.current.done.includes(x)).length
+    const first = s.current.done.length === 1
+
+    const openResults = () => {
+      push(<UserMessage>Посмотреть результаты</UserMessage>)
+      resultsStep()
+    }
+    const goNext = () => {
+      push(<UserMessage>Продолжить</UserMessage>)
+      window.setTimeout(nextStep, 320)
+    }
+
     push(
       <div className="animate-rise flex w-full flex-col gap-2 self-start">
-        <Button
-          size="block"
-          className="justify-start"
-          onClick={() => {
-            push(<UserMessage>Посмотреть результаты</UserMessage>)
-            resultsStep()
-          }}
-        >
-          Посмотреть промежуточные результаты
-        </Button>
-        <Button
-          variant="outline"
-          size="block"
-          className="justify-start"
-          onClick={() => {
-            push(<UserMessage>Продолжить</UserMessage>)
-            window.setTimeout(nextStep, 320)
-          }}
-        >
-          {left ? `Продолжить риск-профиль · осталось ${left}` : "Дополнить риск-профиль"}
-        </Button>
+        {first ? (
+          <>
+            <Button size="block" className="justify-start" onClick={openResults}>
+              Посмотреть промежуточные результаты
+            </Button>
+            <Button variant="outline" size="block" className="justify-start" onClick={goNext}>
+              {left ? `Продолжить риск-профиль · осталось ${left}` : "Дополнить риск-профиль"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="block" className="justify-start" onClick={goNext}>
+              {left ? `Продолжить · осталось ${left}` : "Дополнить риск-профиль"}
+            </Button>
+            <Button variant="quiet" size="block" className="justify-start" onClick={openResults}>
+              Посмотреть, что уже собрано
+            </Button>
+          </>
+        )}
       </div>,
       720
     )
@@ -282,7 +357,7 @@ export default function App() {
     push(
       <CriticalWidget
         onSave={(w, h) => {
-          s.current.completeness = Math.min(96, s.current.completeness + 14)
+          bump(14)
           push(<BotMessage>Записал: {w} кг и {h} см. ИМТ 25,6 — чуть выше нормы, это учту в рекомендациях</BotMessage>, 300)
           window.setTimeout(resultsStep, 800)
         }}
@@ -297,7 +372,7 @@ export default function App() {
     push(
       <ResultWidget
         mode={mode}
-        completeness={s.current.completeness}
+        completeness={completeness}
         goal={s.current.goalShort || "энергия"}
         onOpen={() => showToast("Открываю риск-профиль")}
       />
@@ -337,6 +412,7 @@ export default function App() {
           <PhoneFrame>
             <StatusBar />
             <AppBar tab={tab} onTab={setTab} />
+            {planned && tab === "chat" && <CompletenessStrip value={completeness} hint="риск-профиль собран" />}
 
             {tab === "chat" ? (
               <div ref={chatRef} className="scroll-thin flex flex-1 flex-col gap-3 overflow-y-auto px-3.5 pb-2 pt-4" role="log">
