@@ -11,6 +11,7 @@ import { BotMessage, UserMessage, WhyNote } from "@/components/chat/primitives"
 import { AppBar, Composer, ConnectSheet, PhoneFrame, StatusBar } from "@/components/chat/phone"
 import { InsightMessage, type Visual } from "@/components/chat/insight"
 import { CompletenessStrip } from "@/components/chat/visuals"
+import { IntroStory, Milestone, TypingBubble } from "@/components/chat/story"
 import { DynamicsWidget, MarkerWidget, ResultWidget, Widget } from "@/components/chat/widgets"
 
 type SourceId = "forms" | "files" | "devices" | "mail" | "video"
@@ -66,6 +67,7 @@ export default function App() {
   // полнота нужна и в разметке (полоса под шапкой), и в коллбэках виджетов
   const [completeness, setCompleteness] = React.useState(12)
   const [planned, setPlanned] = React.useState(false)
+  const [intro, setIntro] = React.useState(true)
   const chatRef = React.useRef<HTMLDivElement>(null)
 
   // состояние сценария живёт в ref: коллбэки виджетов читают актуальные значения
@@ -79,6 +81,7 @@ export default function App() {
     filled: 0,
     completeness: 12,
     seenResults: false,
+    milestoneShown: false,
     pinnedTop: true,
     nextId: 0,
   })
@@ -90,10 +93,31 @@ export default function App() {
     else append()
   }, [])
 
+  /** Реплика бота с паузой на набор: сначала точки, потом сообщение. */
+  const say = React.useCallback((node: React.ReactNode, typing = 850, delay = 0) => {
+    const id = s.current.nextId++
+    const show = () => {
+      setBlocks((b) => [...b, { id, node: <TypingBubble /> }])
+      window.setTimeout(() => setBlocks((b) => b.map((x) => (x.id === id ? { id, node } : x))), typing)
+    }
+    if (delay) window.setTimeout(show, delay)
+    else show()
+  }, [])
+
   /** Поднимает полноту профиля и держит ref и состояние в одном значении. */
   const bump = React.useCallback((delta: number) => {
-    s.current.completeness = Math.min(96, s.current.completeness + delta)
+    const before = s.current.completeness
+    s.current.completeness = Math.min(96, before + delta)
     setCompleteness(s.current.completeness)
+    // единственная кульминация за сессию — в момент, когда профиль стало можно считать
+    if (before < 55 && s.current.completeness >= 55 && !s.current.milestoneShown) {
+      s.current.milestoneShown = true
+      const value = s.current.completeness
+      window.setTimeout(() => {
+        const id = s.current.nextId++
+        setBlocks((b) => [...b, { id, node: <Milestone value={value} /> }])
+      }, 1500)
+    }
   }, [])
 
   const showToast = React.useCallback((text: string) => {
@@ -109,20 +133,25 @@ export default function App() {
 
   // ---------- шаг 1: велком и цель ----------
   const start = React.useCallback(() => {
-    s.current = { ...s.current, goal: "", goalShort: "", prio: [], sources: [], queue: [], done: [], filled: 0, completeness: 12, seenResults: false, pinnedTop: true }
+    s.current = { ...s.current, goal: "", goalShort: "", prio: [], sources: [], queue: [], done: [], filled: 0, completeness: 12, seenResults: false, milestoneShown: false, pinnedTop: true }
     setBlocks([])
     setCompleteness(12)
     setPlanned(false)
-    push(
-      <BotMessage
-        lead="Здравствуйте, Илья"
-        sub="Первые выводы — через 3 минуты, до того как вы заполните всё. Дальше картина уточняется с каждым новым источником"
-      >
+    setIntro(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Интро закончилось — начинается разговор. */
+  const beginChat = React.useCallback(() => {
+    setIntro(false)
+    say(
+      <BotMessage sub="Отвечу под ваш запрос: подберу анкеты, показатели и рекомендации именно под него">
         Я собираю ваш риск-профиль: свожу анкеты, анализы и данные устройств в одну картину и показываю, где риск растёт
         и что снизит его в первую очередь.
-      </BotMessage>
+      </BotMessage>,
+      700
     )
-    push(<GoalWidget onPick={pickGoal} />, 420)
+    push(<GoalWidget onPick={pickGoal} />, 1900)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -137,13 +166,14 @@ export default function App() {
     s.current.goalShort = short
     s.current.prio = prio
     push(<UserMessage>{text}</UserMessage>)
-    push(
+    say(
       <BotMessage lead="Цель зафиксирована" sub="Изменить цель можно в любой момент — картина пересоберётся">
         Веду вас к ней: анкеты, показатели и рекомендации будут собираться под запрос «{text.toLowerCase()}».
       </BotMessage>,
-      380
+      850,
+      300
     )
-    push(<SourcesWidget onSubmit={pickSources} />, 760)
+    push(<SourcesWidget onSubmit={pickSources} />, 1900)
   }
 
   // ---------- шаг 2: источники и план ----------
@@ -152,11 +182,12 @@ export default function App() {
     s.current.queue = STEP_ORDER.filter((id) => ids.includes(id))
     setPlanned(true)
     push(<UserMessage>{ids.map((id) => STEP_TITLE[id]).join(", ")}</UserMessage>)
-    push(
+    say(
       <BotMessage lead="Собрал план">
         Начнём с быстрого — первые выводы появятся уже после первого шага. Выйти можно в любой момент, прогресс
         сохранится.
       </BotMessage>,
+      850,
       200
     )
     push(
@@ -188,7 +219,7 @@ export default function App() {
           </ButtonKnob>
         </Button>
       </Widget>,
-      560
+      1500
     )
   }
 
@@ -196,10 +227,10 @@ export default function App() {
   function runStep(id: SourceId) {
     if (id === "forms") push(<FormsWidget prio={s.current.prio} goalShort={s.current.goalShort} onFilled={onFormsFilled} />)
     else if (id === "files") {
-      push(
+      say(
         <BotMessage>Загрузите анализы и заключения через плюс внизу. Проверю каждый файл и скажу, что пригодилось</BotMessage>
       )
-      push(<FilesWidget onRetry={() => showToast("Файл принят: гормоны щитовидной железы")} onDone={onFilesDone} />, 520)
+      push(<FilesWidget onRetry={() => showToast("Файл принят: гормоны щитовидной железы")} onDone={onFilesDone} />, 1600)
     } else if (id === "devices")
       push(<DevicesWidget onConnect={(kind) => setSheet({ kind, open: true })} onSkip={() => skip("devices")} />)
     else if (id === "mail") push(<MailWidget onDone={onMailDone} onSkip={() => skip("mail")} />)
@@ -208,7 +239,7 @@ export default function App() {
 
   function skip(id: SourceId) {
     s.current.done.push(id)
-    push(<BotMessage>Хорошо, вернёмся к этому позже</BotMessage>, 200)
+    say(<BotMessage>Хорошо, вернёмся к этому позже</BotMessage>, 700, 200)
     window.setTimeout(nextStep, 620)
   }
 
@@ -311,7 +342,7 @@ export default function App() {
     insight: { eyebrow: string; before: string; value: string; after?: string; visual: Visual; meaning: string }
   ) {
     if (!s.current.done.includes(id)) s.current.done.push(id)
-    push(<InsightMessage {...insight} />, 320)
+    say(<InsightMessage {...insight} />, 950, 320)
 
     const left = s.current.queue.filter((x) => !s.current.done.includes(x)).length
     const first = s.current.done.length === 1
@@ -347,18 +378,18 @@ export default function App() {
           </>
         )}
       </div>,
-      720
+      2100
     )
   }
 
   // ---------- базовые данные и итог ----------
   function criticalStep() {
-    push(<BotMessage>Для риск-профиля не хватает базового: пол, возраст, вес и рост. Возраст и пол взял из Сбер ID</BotMessage>, 200)
+    say(<BotMessage>Для риск-профиля не хватает базового: пол, возраст, вес и рост. Возраст и пол взял из Сбер ID</BotMessage>, 850, 200)
     push(
       <CriticalWidget
         onSave={(w, h) => {
           bump(14)
-          push(<BotMessage>Записал: {w} кг и {h} см. ИМТ 25,6 — чуть выше нормы, это учту в рекомендациях</BotMessage>, 300)
+          say(<BotMessage>Записал: {w} кг и {h} см. ИМТ 25,6 — чуть выше нормы, это учту в рекомендациях</BotMessage>, 850, 300)
           window.setTimeout(resultsStep, 800)
         }}
       />,
@@ -443,6 +474,8 @@ export default function App() {
             )}
 
             {tab === "chat" && <Composer onPlus={() => showToast("Файл добавлен в очередь проверки")} />}
+
+            {intro && <IntroStory onDone={beginChat} />}
 
             <ConnectSheet
               kind={sheet.kind}
