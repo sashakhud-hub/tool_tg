@@ -53,7 +53,7 @@ jobs:
   # На ветке достаточно убедиться, что прототип собирается.
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
