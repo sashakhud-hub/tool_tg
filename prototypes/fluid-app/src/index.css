@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ground: #080c11;
+  --color-panel: #0e141c;
+  --color-card: #151d27;
+  --color-card-2: #1c2734;
+  --color-card-3: #232f3e;
+  --color-line: #26333f;
+  --color-ink: #e9f1f8;
+  --color-dim: #8da1b6;
+  --color-dim-2: #647587;
+  --color-mint: #67e0ae;
+  --color-mint-ink: #08251a;
+  --color-sky: #86b6ff;
+  --color-amber: #f0c173;
+  --color-coral: #f08a80;
+
+  --font-sans: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Onest", "Golos Text", ui-sans-serif, system-ui, sans-serif;
+
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 620px at 12% -12%, rgba(103, 224, 174, 0.1), transparent 62%),
+    radial-gradient(900px 520px at 92% 6%, rgba(134, 182, 255, 0.09), transparent 60%),
+    var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.32s var(--ease-fluid) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-card-3) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 5px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-card-3);
+  border-radius: 8px;
+}

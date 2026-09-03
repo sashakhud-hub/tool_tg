@@ -15,3 +15,7 @@ supabase/.temp/
 # восстанавливаются из skills-lock.json: npx skills install
 .agents/
 .claude/skills/
+
+# сборка прототипов
+prototypes/*/dist/
+prototypes/*/node_modules/
