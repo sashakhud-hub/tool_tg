@@ -11,7 +11,7 @@ import { BotMessage, UserMessage, WhyNote } from "@/components/chat/primitives"
 import { AppBar, Composer, ConnectSheet, PhoneFrame, StatusBar } from "@/components/chat/phone"
 import { InsightMessage, type Visual } from "@/components/chat/insight"
 import { CompletenessStrip } from "@/components/chat/visuals"
-import { IntroStory, Milestone, TypingBubble } from "@/components/chat/story"
+import { Milestone, StoryMessage, TypingBubble } from "@/components/chat/story"
 import { DynamicsWidget, MarkerWidget, ResultWidget, Widget } from "@/components/chat/widgets"
 
 type SourceId = "forms" | "files" | "devices" | "mail" | "video"
@@ -67,7 +67,6 @@ export default function App() {
   // полнота нужна и в разметке (полоса под шапкой), и в коллбэках виджетов
   const [completeness, setCompleteness] = React.useState(12)
   const [planned, setPlanned] = React.useState(false)
-  const [intro, setIntro] = React.useState(true)
   const chatRef = React.useRef<HTMLDivElement>(null)
 
   // состояние сценария живёт в ref: коллбэки виджетов читают актуальные значения
@@ -137,21 +136,32 @@ export default function App() {
     setBlocks([])
     setCompleteness(12)
     setPlanned(false)
-    setIntro(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
-  /** Интро закончилось — начинается разговор. */
-  const beginChat = React.useCallback(() => {
-    setIntro(false)
+    // рассказ идёт репликами: три фразы с паузами на набор, потом первый вопрос
+    say(<StoryMessage first accent="Здравствуйте, Илья" note="Это ваш ассистент здоровья" />, 600, 200)
     say(
-      <BotMessage sub="Отвечу под ваш запрос: подберу анкеты, показатели и рекомендации именно под него">
-        Я собираю ваш риск-профиль: свожу анкеты, анализы и данные устройств в одну картину и показываю, где риск растёт
-        и что снизит его в первую очередь.
-      </BotMessage>,
-      700
+      <StoryMessage
+        accent="Начнём с того,"
+        tail="чтобы понять вас"
+        note="Не с анализов и не с анкет на тридцать минут. Сначала — с вашего запроса"
+      />,
+      900,
+      2000
     )
-    push(<GoalWidget onPick={pickGoal} />, 1900)
+    say(
+      <StoryMessage
+        accent="Первые выводы —"
+        tail="через 3 минуты"
+        note="Дальше картина уточняется с каждым источником, который вы подключите"
+      />,
+      900,
+      4400
+    )
+    // после рассказа лента начинает следовать за новыми сообщениями
+    window.setTimeout(() => {
+      s.current.pinnedTop = false
+      push(<GoalWidget onPick={pickGoal} />)
+    }, 7000)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -474,8 +484,6 @@ export default function App() {
             )}
 
             {tab === "chat" && <Composer onPlus={() => showToast("Файл добавлен в очередь проверки")} />}
-
-            {intro && <IntroStory onDone={beginChat} />}
 
             <ConnectSheet
               kind={sheet.kind}

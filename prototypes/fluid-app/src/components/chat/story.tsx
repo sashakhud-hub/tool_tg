@@ -1,6 +1,4 @@
 import * as React from "react"
-import { ArrowRight } from "lucide-react"
-
 // @ts-expect-error — ассет скилла serega-emotional поставляется как JS
 import { seregaEmotional } from "@/lib/serega-emotional.js"
 import { cn } from "@/lib/utils"
@@ -29,98 +27,46 @@ function Reveal({ text, className, delay = 0 }: { text: string; className?: stri
   )
 }
 
-type Slide = { accent: string; tail?: string; note: string }
-
-const SLIDES: Slide[] = [
-  { accent: "Здравствуйте, Илья", note: "Это ваш ассистент здоровья" },
-  {
-    accent: "Начнём с того,",
-    tail: "чтобы понять вас",
-    note: "Не с анализов и не с анкет на тридцать минут. Сначала — с вашего запроса",
-  },
-  {
-    accent: "Первые выводы —",
-    tail: "через 3 минуты",
-    note: "Дальше картина уточняется с каждым источником, который вы подключите",
-  },
-]
-
 /**
- * Интро-сторителлинг перед чатом: три фразы, каждая раскрывается посимвольно.
- * Пропускается одним тапом — это рассказ, а не обязательный туториал.
+ * Реплика-рассказ: акцентная фраза раскрывается посимвольно прямо в ленте.
+ * Это то же сообщение бота, только с крупной строкой — сториз не заводим,
+ * весь первый опыт остаётся разговором.
  */
-function IntroStory({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = React.useState(0)
-  const [leaving, setLeaving] = React.useState(false)
-  const slide = SLIDES[step]
-
-  function next() {
-    if (step < SLIDES.length - 1) {
-      setStep((v) => v + 1)
-      return
-    }
-    setLeaving(true)
-    window.setTimeout(onDone, 420)
-  }
-
+function StoryMessage({
+  accent,
+  tail,
+  note,
+  first = false,
+}: {
+  accent: string
+  tail?: string
+  note?: string
+  first?: boolean
+}) {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-30 flex flex-col bg-panel px-6 pb-8 pt-16 transition-all duration-500 ease-fluid",
-        leaving && "pointer-events-none -translate-y-4 opacity-0"
+        "animate-rise max-w-[92%] self-start rounded-[24px] rounded-bl-md border border-white/5 bg-card px-4 py-4",
+        first && "bg-[linear-gradient(165deg,rgba(103,224,174,0.12),transparent_60%)]"
       )}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 opacity-70"
-        style={{ background: "radial-gradient(120% 70% at 50% 0%, rgba(103,224,174,0.18), transparent 70%)" }}
-      />
-
-      <div className="relative flex gap-1.5">
-        {SLIDES.map((_, i) => (
-          <span
-            key={i}
-            className={cn(
-              "h-0.5 flex-1 rounded-full transition-colors duration-500 ease-fluid",
-              i <= step ? "bg-mint" : "bg-card-3"
-            )}
-          />
-        ))}
-      </div>
-
-      <div className="relative flex flex-1 flex-col justify-center pb-16">
-        <h2 className="font-display text-[30px] font-extrabold leading-[1.12] tracking-tight">
-          <Reveal key={`a-${step}`} text={slide.accent} />
-          {slide.tail && (
-            <>
-              <br />
-              <Reveal key={`b-${step}`} text={slide.tail} className="text-mint" delay={260} />
-            </>
-          )}
-        </h2>
+      <h2 className="font-display text-[26px] font-extrabold leading-[1.15] tracking-tight">
+        <Reveal text={accent} />
+        {tail && (
+          <>
+            <br />
+            <Reveal text={tail} className="text-mint" delay={240} />
+          </>
+        )}
+      </h2>
+      {note && (
         <p
-          key={`n-${step}`}
-          className="animate-rise mt-4 max-w-[30ch] text-[15px] leading-relaxed text-dim"
-          style={{ animationDelay: "520ms" }}
+          className="animate-rise mt-2.5 text-[14px] leading-relaxed text-dim"
+          style={{ animationDelay: "480ms" }}
         >
-          {slide.note}
+          {note}
         </p>
-      </div>
-
-      <button
-        onClick={next}
-        className="group relative flex h-14 items-center justify-between rounded-full bg-mint pl-6 pr-2 text-mint-ink transition-transform duration-300 ease-fluid active:scale-[0.985]"
-      >
-        <span className="font-display text-[15px] font-bold">
-          {step < SLIDES.length - 1 ? "Дальше" : "Начать"}
-        </span>
-        <span className="grid size-10 place-items-center rounded-full bg-mint-ink/15 transition-transform duration-300 ease-fluid group-hover:translate-x-0.5">
-          <ArrowRight className="size-4.5" />
-        </span>
-      </button>
-
-      <button onClick={() => { setLeaving(true); window.setTimeout(onDone, 420) }} className="mt-3 py-2 text-[13px] font-semibold text-dim-2">
-        Пропустить
-      </button>
+      )}
     </div>
   )
 }
@@ -193,4 +139,4 @@ function Milestone({ value }: { value: number }) {
   )
 }
 
-export { IntroStory, TypingBubble, Milestone, Reveal }
+export { StoryMessage, TypingBubble, Milestone, Reveal }
